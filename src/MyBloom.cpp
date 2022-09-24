@@ -10,11 +10,11 @@
 
 using namespace std;
 
-vector<uint> myhash( std::string key, int len, int k, int r, int range){
+vector<uint> myhash( std::string key, int len, int k, int range){
   // int hashvals[k];
   vector <uint> hashvals;
   uint op; // takes 4 byte
-  for (int i=0+ k*r; i<k+ k*r; i++){
+  for (int i=0; i<k; i++){
     MurmurHash3_x86_32(key.c_str(), len, i, &op);
     hashvals.push_back(op%range);
   }
