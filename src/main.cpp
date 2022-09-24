@@ -22,12 +22,13 @@ int range = 2000000000; //size of BF
 int k = 2;
 std::cout << "range" <<range<< '\n';
 // constructor
-mybf = new BloomFiler(range, k);
+
+BloomFiler mybf(range, k);
 
 float fp_ops;
 float ins_time;
 float query_time;
-string SerOpFile ="results/SerFASTQ_" + to_string(range)+'_'+ to_string(k)+'.txt';
+string SerOpFile ="results/SerFASTQ_" + to_string(range)+'_'+ to_string(k)+ ".txt";
 
 /////////////////INSERT//////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
@@ -40,7 +41,7 @@ if (keys.size()==0){
 else{
   for(std::size_t i=0; i<keys.size(); ++i){
     for (uint x =0; x<keys[i].size()-31 +1; x++){
-      vector<uint> temp = myhash(keys[i].substr(x, 31).c_str(), 31 , k,r, range);
+      vector<uint> temp = myhash(keys[i].substr(x, 31).c_str(), 31 , k, range);
       mybf.insert(temp);}
   }
 }
@@ -57,9 +58,9 @@ cout<<"packing: "<<mybf.m_bits->getcount()<<endl;
 
 
 ///////////////Query/////////////////////////////////////////////////////////////
-string SerOpFile ="results/SerFASTQ_" + to_string(range)+'_'+ to_string(k)+'.txt';
+// string SerOpFile ="results/SerFASTQ_" + to_string(range)+'_'+ to_string(k)+'.txt';
 cout<<"deser starting"<<endl;
-myRambo.deserializeRAMBO(SerOpFile);
+mybf.deserializeBF(SerOpFile);
 std::cout << "desealized!" << '\n';
 
 std::vector<string> testKeys = readlines("data/testfile.txt", 0);
@@ -71,14 +72,15 @@ float pos=0;
 std::clock_t t5_cpu = std::clock();
 chrono::time_point<chrono::high_resolution_clock> t5 = chrono::high_resolution_clock::now();
 
+vector<uint> check;
 for (std::size_t i=0; i<testKeys.size(); i++){
-  check = myhash(testKeys[i], testKeys[i].size() , k, r,range); //hash values correspondign to the keys
-  mybf.test(check){
+  check = myhash(testKeys[i], testKeys[i].size() , k, range); //hash values correspondign to the keys
+  if (mybf.test(check)){
     pos = pos + 1;
   }
 }
 cout<<"total pos is: "<<pos; // false positives/(all negatives)
-cout<<"fp rate is: "<<(pos-posgt)/testKeys.size(); // false positives/(all negatives)
+// cout<<"fp rate is: "<<(pos-posgt)/testKeys.size(); // false positives/(all negatives)
 
 // cout<<endl;
 std::clock_t t6_cpu = std::clock();
