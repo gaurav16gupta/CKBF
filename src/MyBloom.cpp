@@ -7,19 +7,10 @@
 #include <math.h>
 #include <bitset>
 #include "bitArray.h"
+#include <algorithm> 
 
 using namespace std;
 
-vector<uint> myhash( std::string key, int len, int k, int range){
-  // int hashvals[k];
-  vector <uint> hashvals;
-  uint op; // takes 4 byte
-  for (int i=0; i<k; i++){
-    MurmurHash3_x86_32(key.c_str(), len, i, &op);
-    hashvals.push_back(op%range);
-  }
-  return hashvals;
-}
 
 BloomFiler::BloomFiler(int sz, int k){
       k = k; //number of hash

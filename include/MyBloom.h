@@ -4,7 +4,6 @@
 #include <bitset>
 #include "bitArray.h"
 
-std::vector<uint> myhash(std::string key, int len, int k, int range);
 
 class BloomFiler{
     public:
