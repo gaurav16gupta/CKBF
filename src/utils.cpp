@@ -68,27 +68,6 @@ void writeRAMBOresults(string path, int rows, int cols, float* values){
   myfile.close();
 }
 
-//use array set intersection and union
-std::vector<int> arrayunion(std::vector<int> &v1, std::vector<int> &v2) {
-  std::vector<int> v;
-  std::set_union(v1.begin(), v1.end(), v2.begin(), v2.end(),
-                 std::back_inserter(v));
-  return v;
-}
-
-std::vector<int> arrayintersection(std::vector<int> &v1, std::vector<int> &v2) {
-  std::vector<int> v;
-  std::set_intersection(v1.begin(), v1.end(), v2.begin(), v2.end(),
-                        std::back_inserter(v));
-  return v;
-}
-
-set<int> takeunion(set<int> set1, set<int> set2){
-  set<int> res;
-  res.insert(set1.begin(), set1.end());
-  res.insert(set2.begin(), set2.end());
-  return res;
-}
 
 std::vector <std::string> getctxdata(string filenameSet){
   //get the size of Bloom filter by count
@@ -102,10 +81,6 @@ std::vector <std::string> getctxdata(string filenameSet){
 	      // std::vector <std::string> linesplit = line2array(line1, ' ');
               allKeys.push_back(line1.substr(0, 31));
               totKmerscnt++;
-              // if (totKmerscnt==1){
-              //   cout<<line1.substr(0, 31)<<endl;
-              //   cout<<line2array(line1, ' ')[0]<<endl;
-              // }
           }
       }
       std::cout<<"total inserted from one file"<<filenameSet<<": "<<totKmerscnt<<std::endl;
@@ -156,32 +131,6 @@ std::vector <std::string>  getFastqdata(string filenameSet){
       return allLines;
   }
 
-// char* getctxdataFast(string filenameSet){
-//   //get the size of Bloom filter by count
-//   ifstream cntfile (filenameSet);
-//   std::cout<<"fast0"<<std::endl;
-//   char allKeys2[3000000][32];
-//   int totKmerscnt = 0;
-//   std::cout<<"fast1"<<std::endl;
-
-//   while ( cntfile.good() )
-//       {
-//           string line1;
-//           while( getline ( cntfile, line1 ) ){
-// 	      std::vector <std::string> linesplit = line2array(line1, ' ');
-//               // allKeys.push_back(linesplit[0]); 
-//               totKmerscnt++;
-//               std::cout<<"fast2"<<std::endl;
-//               strcpy(allKeys2[totKmerscnt], linesplit[0].c_str());
-//               std::cout<<"fast3"<<std::endl;
-
-//           }
-//       }
-//       // strcpy(allKeys[0], std::to_string(totKmerscnt).c_str());
-//       // allKeys[0] = std::to_string(totKmerscnt).c_str();
-//       std::cout<<"total inserted from one file fast"<<filenameSet<<": "<<totKmerscnt<<std::endl;
-//       return allKeys2;
-// }
 
 //num control how many lines to get
 std::vector<string> readlines( string path, int num){
