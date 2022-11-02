@@ -5,10 +5,10 @@
 #include "bitArray.h"
 
 
-class BloomFiler{
+class BloomFilter{
     public:
-        // BloomFiler(int capacity, float FPR, int k);
-        BloomFiler(int sz, int k);
+        // BloomFilter(int capacity, float FPR, int k);
+        BloomFilter(int sz, int k);
         void insert(std::vector<uint> a);
         bool test(std::vector<uint> a);
         void serializeBF(std::string BF_file);

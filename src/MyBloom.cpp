@@ -12,19 +12,19 @@
 using namespace std;
 
 
-BloomFiler::BloomFiler(int sz, int k){
+BloomFilter::BloomFilter(int sz, int k){
       k = k; //number of hash
       m_bits = new bitArray(sz);
       }
 
-void BloomFiler::insert(vector<uint> a){
+void BloomFilter::insert(vector<uint> a){
   int N = a.size();
   for (int n =0 ; n<N; n++){
     m_bits->SetBit(a[n]);
   }
 }
 
-bool BloomFiler::test(vector<uint> a){
+bool BloomFilter::test(vector<uint> a){
   int N = a.size();
   for (int n =0 ; n<N; n++){
       if (!m_bits->TestBit(a[n])){
@@ -34,10 +34,10 @@ bool BloomFiler::test(vector<uint> a){
   return true;
 }
 
-void BloomFiler::serializeBF(string BF_file){
+void BloomFilter::serializeBF(string BF_file){
   m_bits->serializeBitAr(BF_file);
 }
 
-void BloomFiler::deserializeBF(string BF_file){
+void BloomFilter::deserializeBF(string BF_file){
   m_bits->deserializeBitAr(BF_file);
 }
