@@ -7,6 +7,10 @@
 #include <cassert>
 
 std::vector<uint> myhash(std::string key, int len, int k, int range);
+std::vector<uint> myhash2( std::string &&key, int len, int k, int range);
+std::vector<uint> xxhash32( std::string &&key, int len, int k, int range);
+uint *rand_nums(int len, int range);
+std::vector<uint> tabulation_hash(std::string &&key, int k, uint rand_nums[]);
 std::vector<uint> myhashCacheLoc(std::string key, int len, int k, int range);
 std::vector<uint> myhashCheap(std::string key, int len, int k, int range);
 

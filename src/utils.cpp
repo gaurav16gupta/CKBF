@@ -8,8 +8,10 @@
 #include <string.h>
 #include <algorithm>
 #include <chrono>
+#include <random>
 #include "MyBloom.h"
 #include "MurmurHash3.h"
+#include "xxhash32.h"
 #include "utils.h"
 #include <map>
 #include <cassert>
@@ -41,10 +43,54 @@ std::vector <std::string>  getFastqdata(string filenameSet){
 
 vector<uint> myhash( std::string key, int len, int k, int range){
   vector <uint> hashvals;
+  // should be a pointer array
   uint op; // takes 4 byte
   for (int i=0; i<k; i++){
     MurmurHash3_x86_32(key.c_str(), len, i, &op);
     hashvals.push_back(op%range);
+    // push_back might be slow due to memory reallocation
+  }
+  return hashvals;
+}
+
+vector<uint> myhash2( std::string &&key, int len, int k, int range){
+  vector <uint> hashvals(k);
+  uint op; // takes 4 byte
+  for (int i=0; i<k; i++){
+    MurmurHash3_x86_32(key.c_str(), len, i, &op);
+    hashvals[i] = op%range;
+  }
+  return hashvals;
+}
+
+vector<uint> xxhash32(std::string &&key, int len, int k, int range) {
+  vector<uint> hashvals(k);
+  for (int i = 0; i < k; ++i) {
+    hashvals[i] = XXHash32::hash(key.c_str(), len, i) % range;
+  }
+  return hashvals;
+}
+
+uint *rand_nums(int len, int range) {
+  uint *rn = new uint[len];
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(0, range-1); // distribution in range [1, 6]
+  for (int i = 0; i < len; ++i) {
+    rn[i] = dist(rng);
+  }
+  return rn;
+}
+
+vector<uint> tabulation_hash(std::string &&key, int k, uint rand_nums[]) {
+  vector<uint> hashvals(k);
+  for (int i = 0; i < k; ++i) {
+    uint hv = 0;
+    for (int j = 0; j < 31; ++j) {
+      hv ^= rand_nums[256 * j + key[j]];
+    }
+    cout << hv << ' ';
+    hashvals[i] = hv;
   }
   return hashvals;
 }

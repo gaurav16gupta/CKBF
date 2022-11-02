@@ -13,20 +13,22 @@
 #include "bitArray.h"
 #include <ctime>
 #include <omp.h>
+#include <filesystem>
 
 using namespace std;
 #define  NUM_THREADS 64
 
 int main(int argc, char** argv){
-string job(argv[1]);
+// string job(argv[1]);
 
-int range = 18644643*2; //size of BF
-int k = 2;
+// int range = 18644643*2; //size of BF
+// int k = 2;
+int range = 2000000000/*8867718513*/, k = 7;
 std::cout << "range" <<range<< '\n';
 // constructor
 BloomFiler mybf(range, k);
 string filename = "SRR649955";
-string SerOpFile ="results/BF_"+filename+"_" + to_string(range)+'_'+ to_string(k)+ ".txt";
+string SerOpFile ="../results/BF_"+filename+"_" + to_string(range)+'_'+ to_string(k)+ ".txt";
 
 bool index = true;
 bool query = true;
@@ -34,10 +36,15 @@ float fp_ops;
 float ins_time;
 float query_time;
 
+uint *random_nums = rand_nums(256 * 31, range);
+
 /////////////////INSERT//////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
 if (index){
-  string mainfile = "data/"+filename+".fastq";
+
+   std::cout << "Current path is " << filesystem::current_path() << '\n';
+
+  string mainfile = "../data/"+filename+".fastq";
   omp_set_num_threads(NUM_THREADS);
   chrono::time_point<chrono::high_resolution_clock> t3 = chrono::high_resolution_clock::now();
   vector<std::string> keys = getFastqdata(mainfile);
@@ -53,7 +60,8 @@ if (index){
     // cout<<nthd<<endl;
     for( i=id; i<keys.size(); i=i+ nthd){
       for (uint x =0; x<keys[i].size()-31 +1; x++){
-        vector<uint> temp = myhash(keys[i].substr(x, 31).c_str(), 31 , k, range);
+        // vector<uint> temp = xxhash32(keys[i].substr(x, 31).c_str(), 31 , k, range);
+        vector<uint> temp = myhash2(keys[i].substr(x, 31).c_str(), 31, k, range);
         mybf.insert(temp);
         }
     }
@@ -78,7 +86,7 @@ if (query){
   mybf.deserializeBF(SerOpFile);
   std::cout << "desealized!" << '\n';
 
-  std::vector<string> testKeys = readlines("data/test_"+filename+".txt", 0);
+  std::vector<string> testKeys = readlines("../data/test_"+filename+".txt", 0);
   cout<<"total number of queries : "<<testKeys.size()<<endl;
 
   float pos=0;
@@ -92,13 +100,22 @@ if (query){
 
   float hash=0;
   float look=0;
+  int64_t hash_time_accu = 0;
+  int64_t check_time_accu = 0;
   for (std::size_t i=0; i<testKeys.size(); i++){
     membership = true;
     for (uint q =0; q<testKeys[i].size()-31 +1; q++){
-        // chrono::time_point<chrono::high_resolution_clock> ta = chrono::high_resolution_clock::now();
-        check= myhash(testKeys[i].substr(q, 31).c_str(), 31 , k, range);
-        // chrono::time_point<chrono::high_resolution_clock> tb = chrono::high_resolution_clock::now();
+        chrono::time_point<chrono::high_resolution_clock> ta = chrono::high_resolution_clock::now();
+        // check= xxhash32(testKeys[i].substr(q, 31), 31 , k, range);
+        check = myhash2(testKeys[i].substr(q, 31), 31, k, range);
+        chrono::time_point<chrono::high_resolution_clock> tb = chrono::high_resolution_clock::now();
+        hash_time_accu += chrono::duration_cast<chrono::nanoseconds>(tb - ta).count();
         // cout<<check[0]<<" ";
+
+        chrono::time_point<chrono::high_resolution_clock> tc = chrono::high_resolution_clock::now();
+        mybf.test(check);
+        chrono::time_point<chrono::high_resolution_clock> td = chrono::high_resolution_clock::now();
+        check_time_accu += chrono::duration_cast<chrono::nanoseconds>(td - tc).count();
         if (!mybf.test(check)){
           membership = false;
           break;}
@@ -113,7 +130,9 @@ if (query){
   }
   // cout <<"hash "<<hash<<endl; 
   // cout <<"look "<<look<<endl; 
-  cout<<"total pos is: "<<pos<<endl; // false positives/(all negatives)
+  cout << "total hash time is: " << hash_time_accu << endl;
+  cout << "total check time is: " << check_time_accu << endl;
+  // cout<<"total pos is: "<<pos<<endl; // false positives/(all negatives)
   // cout<<"fp rate is: "<<(pos-posgt)/testKeys.size(); // false positives/(all negatives)
 
   std::clock_t t6_cpu = std::clock();
