@@ -38,8 +38,16 @@ std::vector <std::string>  getFastqdata(string filenameSet){
   }
   std::cout<<"total kmers in this file: "<<totKmerscnt<<std::endl;
   return allLines;
-  }
+}
 
+
+void murmurhash( const char *  key, int len, int k, uint range, uint * hashvals){
+  uint op; // takes 4 byte
+  for (int i=0; i<k; i++){
+    MurmurHash3_x86_32(key, len, i + 10244231, &op);
+    hashvals[i] = op%range;
+  }
+}
 
 vector<uint> myhash( std::string key, int len, int k, int range){
   vector <uint> hashvals;

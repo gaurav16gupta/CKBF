@@ -16,7 +16,7 @@ std::vector<uint> myhashCheap(std::string key, int len, int k, int range);
 
 std::vector <std::string> getFastqdata(std::string filenameSet);
 std::vector<std::string> readlines( std::string path, int num);
-
+void murmurhash( const char *  key, int len, int k, uint range, uint * hashvals);
 // std::vector<std::string> getsets( std::string path);
 // std::vector<std::string> line2array( std::string line, char d);
 // void writeRAMBOresults(std::string path, int rows, int cols, float* values);
