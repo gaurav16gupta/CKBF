@@ -47,14 +47,14 @@ public:
 
 class FuzzyHasher : public Hasher {
 protected:
-    const uint32_t cacheLineSize = 512;
-    const uint32_t minHashRange;
     const uint32_t kMer;
+    const uint32_t universalHashRange;
+    const uint32_t minHashRange;
 public:
-    FuzzyHasher(uint32_t range, uint32_t num_hashes, uint32_t kMer, uint32_t seed=0)
-        : Hasher(range, num_hashes, seed), minHashRange(range / cacheLineSize), kMer(kMer) {
-        if (range % cacheLineSize != 0) {
-            cerr << "Hash range=" << range << " is not a multiple of " << cacheLineSize << '.' << endl;
+    FuzzyHasher(uint32_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
+        : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange), minHashRange(range / universalHashRange) {
+        if (range % universalHashRange != 0) {
+            cerr << "Hash range=" << range << " is not a multiple of " << universalHashRange << '.' << endl;
         }
     }
 
@@ -65,10 +65,46 @@ public:
                 MurmurHash3_x86_32(sequence + pos + j, kMer, seed + i * 31 + j, &hashValue);
                 minValue = min(hashValue, minValue);
             }
-            MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, cacheLineSize);
-            out[i] += (minValue % minHashRange) * cacheLineSize;
+            MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
+            out[i] += (minValue % minHashRange) * universalHashRange;
         }
         pos += 1;
+    }
+};
+
+class EfficientFuzzyHasher : public Hasher {
+protected:
+    const uint32_t kMer;
+    const uint32_t universalHashRange;
+    const uint32_t minHashRange;
+    uint32_t *tree;
+    uint8_t *indices;
+public:
+    EfficientFuzzyHasher(uint32_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
+        : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange), minHashRange(range / universalHashRange), tree(new uint32_t[63 * 4]), indices(new uint8_t[31 * 4]) {
+        if (range % universalHashRange != 0) {
+            cerr << "Hash range=" << range << " is not a multiple of " << universalHashRange << '.' << endl;
+        }
+        fill(tree, tree + 63 * 4, UINT32_MAX);
+        for (uint32_t i = 0; i < 31 * 4; ++i) {
+            indices[i] = i % (31 * 4);
+        }
+    }
+
+    void hash(uint32_t * out) override {
+        if (tree[0] == UINT32_MAX) {
+            // initial tree construction
+            for (uint32_t i = 0; i < num_hashes; ++i) {
+                uint32_t hashValue, minValue = UINT32_MAX;
+                for (uint32_t j = 0; j <= 31 - kMer; ++j) {
+                    MurmurHash3_x86_32(sequence + pos + j, kMer, seed + i * 31 + j, &hashValue);
+                    minValue = min(hashValue, minValue);
+                }
+                MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
+                out[i] += (minValue % minHashRange) * universalHashRange;
+            }
+            pos += 1;
+        }
     }
 };
 
