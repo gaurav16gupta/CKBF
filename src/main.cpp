@@ -71,7 +71,7 @@ int main() {
 
     cout << "Hash Time: " << hashTimeAccu << "; BF Query Time: " << bfTimeAccu << endl;
 
-    cout << fpCount << endl;
+    cout << "Number of False Positives: " << fpCount << endl;
 
     return 0;
 }
