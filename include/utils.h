@@ -22,4 +22,18 @@ vector<string> getFastqData(string fileName) {
     return lines;
 }
 
+vector<string> getQueryData(string fileName) {
+    vector<string> lines;
+    ifstream queryFile(fileName);
+    string line;
+    uint64_t line_num = 0;
+    while (getline(queryFile, line)) {
+        if (line.size() >= 31) {
+            lines.push_back(line);
+        }
+        line_num += 1;
+    }
+    return lines;
+}
+
 #endif

@@ -12,13 +12,16 @@ struct Config {
     static const uint32_t FUZZY_HASH = 1;
 
     string fastqFileName;
+    string queryFileName;
     uint32_t range;
     uint32_t k; // number of hashes
+    uint32_t numThreads;
+    uint32_t universalHashRange;
     uint32_t seed;
     uint32_t hashType;
 
-    void print() {
-        cout << "configs: fastqFileName=" << fastqFileName << "; range=" << range << "; k=" << k << "; seed=" << seed << "; hashType=" << hashType << endl;
+    void print() const {
+        cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; seed=" << seed << "; hashType=" << hashType << endl;
     }
 };
 
@@ -33,11 +36,17 @@ Config getConfigs(string configFileName) {
         string value = line.substr(equalPos + 1);
 
         if (key == "fastq_file_name") {
-            config.fastqFileName = move(value);
+            config.fastqFileName = value;
+        } else if (key == "query_file_name") {
+            config.queryFileName = value;
         } else if (key == "range") {
             config.range = stoul(value);
         } else if (key == "k") {
             config.k = stoul(value);
+        } else if (key == "num_threads") {
+            config.numThreads = stoul(value);
+        } else if (key == "universal_hash_range") {
+            config.universalHashRange = stoul(value);
         } else if (key == "seed") {
             config.seed = stoul(value);
         } else if (key == "hash") {
