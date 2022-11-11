@@ -3,7 +3,7 @@
 using namespace std;
 
 BloomFilter::BloomFilter(uint32_t sz, uint32_t k)
-  : bits(new uint8_t[sz]), k(k) {
+  : bits(new uint8_t[sz >> 3]), k(k) {
 
 }
 
