@@ -1,130 +1,77 @@
-#include <iomanip>
 #include <iostream>
 #include <fstream>
-#include <math.h>
-#include <sstream>
+#include <vector>
 #include <string>
-#include <string.h>
-#include <algorithm>
 #include <chrono>
-#include "MyBloom.h"
-#include "MurmurHash3.h"
-#include "utils.h"
-#include "bitArray.h"
-#include <ctime>
 #include <omp.h>
+#include "BloomFilter.h"
+#include "utils.h"
+#include "config.h"
+#include "Hasher.h"
 
 using namespace std;
-#define  NUM_THREADS 64
 
-int main(int argc, char** argv){
-string job(argv[1]);
+int main() {
+    const Config config = getConfigs("../configs/default.cfg");
+    config.print();
 
-int range = 18644643*2; //size of BF
-int k = 2;
-std::cout << "range" <<range<< '\n';
-// constructor
-BloomFiler mybf(range, k);
-string filename = "SRR649955";
-string SerOpFile ="results/BF_"+filename+"_" + to_string(range)+'_'+ to_string(k)+ ".txt";
+    vector<string> sequences = getFastqData("../data/" + config.fastqFileName + ".fastq");
+    vector<string> querySequences = getQueryData("../data/" + config.queryFileName);
+    BloomFilter bf(config.range, config.k);
 
-bool index = true;
-bool query = true;
-float fp_ops;
-float ins_time;
-float query_time;
+    omp_set_num_threads(config.numThreads);
 
-/////////////////INSERT//////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
-if (index){
-  string mainfile = "data/"+filename+".fastq";
-  omp_set_num_threads(NUM_THREADS);
-  chrono::time_point<chrono::high_resolution_clock> t3 = chrono::high_resolution_clock::now();
-  vector<std::string> keys = getFastqdata(mainfile);
-  if (keys.size()==0){
-      std::cout<<mainfile<<" does not exists or empty "<<std::endl;
-  }
-  else{
-    #pragma omp parallel
-    {
-    int i, id, nthd;
-    id = omp_get_thread_num();
-    nthd = omp_get_num_threads();
-    // cout<<nthd<<endl;
-    for( i=id; i<keys.size(); i=i+ nthd){
-      for (uint x =0; x<keys[i].size()-31 +1; x++){
-        vector<uint> temp = myhash(keys[i].substr(x, 31).c_str(), 31 , k, range);
-        mybf.insert(temp);
+    Hasher *hasher[config.numThreads]; // each thread gets its own hasher
+    for (uint32_t i = 0; i < config.numThreads; ++i) {
+        hasher[i] = config.hashType == Config::MURMUR_HASH
+        ? static_cast<Hasher*>(new MurmurHasher(config.range, config.k, config.seed))
+        : static_cast<Hasher*>(new FuzzyHasher(config.range, config.k, 3, config.universalHashRange, config.seed));
+    }
+
+    uint32_t hashTimeAccu = 0, bfTimeAccu = 0;
+    # pragma omp parallel for reduction(+:hashTimeAccu, bfTimeAccu)
+    for (size_t i = 0; i < sequences.size(); ++i) {
+        uint32_t hashes[config.k];
+        uint32_t threadId = omp_get_thread_num();
+        hasher[threadId]->setSequence(sequences[i]);
+        chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
+        while (hasher[threadId]->hasNext()) {
+            t1 = chrono::high_resolution_clock::now();
+            hasher[threadId]->hash(hashes);
+            t2 = chrono::high_resolution_clock::now();
+            bf.insert(hashes);
+            t3 = chrono::high_resolution_clock::now();
+            hashTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
+            bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
         }
     }
+
+    cout << "Hash Time: " << hashTimeAccu << "; BF Insert Time: " << bfTimeAccu << endl;
+
+    hashTimeAccu = 0, bfTimeAccu = 0;
+    uint32_t fpCount = 0;
+    # pragma omp parallel for reduction(+:hashTimeAccu, bfTimeAccu)
+    for (size_t i = 0; i < querySequences.size(); ++i) {
+        uint32_t threadId = omp_get_thread_num();
+        uint32_t hashes[config.k];
+        hasher[threadId]->setSequence(querySequences[i]);
+        chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
+        bool fp = true;
+        while (hasher[threadId]->hasNext()) {
+            t1 = chrono::high_resolution_clock::now();
+            hasher[threadId]->hash(hashes);
+            t2 = chrono::high_resolution_clock::now();
+            fp &= bf.test(hashes);
+            t3 = chrono::high_resolution_clock::now();
+            hashTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
+            bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
+        }
+        fpCount += fp;
     }
-  }
 
-  chrono::time_point<chrono::high_resolution_clock> t4 = chrono::high_resolution_clock::now();
-  cout << chrono::duration_cast<chrono::nanoseconds>(t4-t3).count()/1000000000.0 << "sec\n";
-  ins_time = (t4-t3).count()/1000000000.0;
+    cout << "Hash Time: " << hashTimeAccu << "; BF Query Time: " << bfTimeAccu << endl;
 
-  cout<<"Serializing RAMBO at: "<<SerOpFile<<endl;
-  mybf.serializeBF(SerOpFile);
-  cout<<"packing: "<<mybf.m_bits->getcount()<<endl;
+    cout << "Number of False Positives: " << fpCount << endl;
+
+    return 0;
 }
-/////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
-
-
-///////////////Query/////////////////////////////////////////////////////////////
-if (query){
-  cout<<"deser starting"<<endl;
-  mybf.deserializeBF(SerOpFile);
-  std::cout << "desealized!" << '\n';
-
-  std::vector<string> testKeys = readlines("data/test_"+filename+".txt", 0);
-  cout<<"total number of queries : "<<testKeys.size()<<endl;
-
-  float pos=0;
-  // std::ofstream FPtestFile;
-  // FPtestFile.open("FPtestFileToy.txt");
-  std::clock_t t5_cpu = std::clock();
-  chrono::time_point<chrono::high_resolution_clock> t5 = chrono::high_resolution_clock::now();
-
-  vector<uint> check;
-  bool membership;
-
-  float hash=0;
-  float look=0;
-  for (std::size_t i=0; i<testKeys.size(); i++){
-    membership = true;
-    for (uint q =0; q<testKeys[i].size()-31 +1; q++){
-        // chrono::time_point<chrono::high_resolution_clock> ta = chrono::high_resolution_clock::now();
-        check= myhash(testKeys[i].substr(q, 31).c_str(), 31 , k, range);
-        // chrono::time_point<chrono::high_resolution_clock> tb = chrono::high_resolution_clock::now();
-        // cout<<check[0]<<" ";
-        if (!mybf.test(check)){
-          membership = false;
-          break;}
-        // chrono::time_point<chrono::high_resolution_clock> tc = chrono::high_resolution_clock::now();
-        // hash += chrono::duration_cast<chrono::nanoseconds>(tb-ta).count()/(1000.0);
-        // look += chrono::duration_cast<chrono::nanoseconds>(tc-tb).count()/(1000.0);
-    }
-    // cout<<endl;
-    if (membership){
-      pos = pos + 1;
-    }
-  }
-  // cout <<"hash "<<hash<<endl; 
-  // cout <<"look "<<look<<endl; 
-  cout<<"total pos is: "<<pos<<endl; // false positives/(all negatives)
-  // cout<<"fp rate is: "<<(pos-posgt)/testKeys.size(); // false positives/(all negatives)
-
-  std::clock_t t6_cpu = std::clock();
-  chrono::time_point<chrono::high_resolution_clock> t6 = chrono::high_resolution_clock::now();
-  float QTpt_cpu = 1000000.0 * (t6_cpu-t5_cpu)/(CLOCKS_PER_SEC*testKeys.size()); //in ms
-  float QTpt = chrono::duration_cast<chrono::nanoseconds>(t6-t5).count()/(1000.0*testKeys.size());
-  cout <<"query time wall clock is :" <<QTpt <<" microsec per query,  cpu is :" <<QTpt_cpu<< " microsec per query \n\n";
-}
-// FPtestFile<<"query time wall clock is :" <<QTpt <<", cpu is :" <<QTpt_cpu<< " milisec\n\n";
-// query_time = QTpt_cpu;
-/////////////////////////////////////////////////////////////////////////////////
-return 0;
-}
-
