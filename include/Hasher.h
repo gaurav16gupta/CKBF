@@ -62,7 +62,7 @@ public:
         for (uint32_t i = 0; i < num_hashes; ++i) {
             uint32_t hashValue, minValue = UINT32_MAX;
             for (uint32_t j = 0; j <= 31 - kMer; ++j) {
-                MurmurHash3_x86_32(sequence + pos + j, kMer, seed + i * 31 + j, &hashValue);
+                MurmurHash3_x86_32(sequence + pos + j, kMer, seed + i, &hashValue);
                 minValue = min(hashValue, minValue);
             }
             MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
