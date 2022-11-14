@@ -45,13 +45,14 @@ public:
     }
 };
 
-class FuzzyHasher : public Hasher {
+
+class LSHBBFHasher : public Hasher {
 protected:
     const uint32_t kMer;
     const uint32_t universalHashRange;
     const uint32_t minHashRange;
 public:
-    FuzzyHasher(uint32_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
+    LSHBBFHasher(uint32_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
         : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange), minHashRange(range / universalHashRange) {
         if (range % universalHashRange != 0) {
             cerr << "Hash range=" << range << " is not a multiple of " << universalHashRange << '.' << endl;
@@ -67,6 +68,32 @@ public:
             }
             MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
             out[i] += (minValue % minHashRange) * universalHashRange;
+        }
+        pos += 1;
+    }
+};
+
+class FuzzyHasher : public Hasher {
+protected:
+    const uint32_t kMer;
+    const uint32_t universalHashRange;
+    const uint32_t minHashRange;
+public:
+    FuzzyHasher(uint32_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
+        : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange), minHashRange(range) {
+    }
+
+    void hash(uint32_t * out) override {
+        uint32_t hashValue, minValue = UINT32_MAX;
+        for (uint32_t i = 0; i < num_hashes; ++i) {
+            minValue = UINT32_MAX;
+            for (uint32_t j = 0; j <= 31 - kMer; ++j) {
+                MurmurHash3_x86_32(sequence + pos + j, kMer, seed + i * 31 + j, &hashValue);
+                minValue = min(hashValue, minValue);
+            }
+            MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
+            // offset with min hash. overall uh + mh
+            out[i] += minValue % (minHashRange - universalHashRange); 
         }
         pos += 1;
     }
