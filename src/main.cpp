@@ -51,7 +51,7 @@ int main() {
 
     hashTimeAccu = 0, bfTimeAccu = 0;
     uint32_t fpCount = 0;
-    # pragma omp parallel for reduction(+:hashTimeAccu, bfTimeAccu)
+    # pragma omp parallel for reduction(+:hashTimeAccu, bfTimeAccu, fpCount)
     for (size_t i = 0; i < sequences.size(); ++i) {
         uint32_t threadId = omp_get_thread_num();
         uint32_t hashes[config.k];
@@ -63,17 +63,14 @@ int main() {
             t1 = chrono::high_resolution_clock::now();
             hasher[threadId]->hash(hashes);
             t2 = chrono::high_resolution_clock::now();
-            fp &= bf.test(hashes);
+            fp = fp && bf.test(hashes);
             t3 = chrono::high_resolution_clock::now();
             hashTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
             bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
         }
-        fpCount += fp;
+        fpCount += (fp ? 1 : 0);
     }
-
     cout << "Hash Time: " << hashTimeAccu << "; BF Query Time: " << bfTimeAccu << endl;
-
-    cout << "False Positive Rate: " << static_cast<float>(fpCount) / sequences.size() << endl;
-
+    cout << "Positive Rate: " << static_cast<float>(fpCount) / sequences.size() << endl;
     return 0;
 }
