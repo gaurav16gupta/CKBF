@@ -1,15 +1,13 @@
 import numpy as np
 import sys
 
-n = int(sys.argv[1])
-l = int(sys.argv[2])
-filename = str(sys.argv[3])
+l = int(sys.argv[1])
+filename = str(sys.argv[2])
 
-idx = np.random.randint(0, 4, (n,l))
+idx = np.random.randint(0, 4, l*200)
 base = np.array(['A', 'T' , 'C' , 'G'])
 strings = base[idx]
-lines = [''.join(strings[i])+'\n' for i in range(n)]
+randamarkers = np.cumsum(np.random.randint(35, 200, (l-1,)))
+strings[randamarkers] = '\n'
 with open(filename, "w") as f:
-    f.writelines(lines)
-
-
+    f.writelines(strings)
