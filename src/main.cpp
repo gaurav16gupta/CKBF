@@ -74,12 +74,12 @@ int main(int argc, char* argv[]) {
         while (hasher[threadId]->hasNext()) {
             hasher[threadId]->hash(hashes);
             // t2 = chrono::high_resolution_clock::now();
-            fp &= bf.test(hashes);
+            fp = fp && bf.test(hashes);
             // t3 = chrono::high_resolution_clock::now();
             // hashTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
             // bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
         }
-        fpCount += fp;
+        fpCount += (fp ? 1 : 0);
     }
     t2 = chrono::high_resolution_clock::now();
     cout << "Query Time: " << chrono::duration_cast<chrono::microseconds>(t2 - t1).count()/1000000.0 << endl;
