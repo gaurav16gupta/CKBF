@@ -15,26 +15,31 @@ using namespace std;
 int main(int argc, char* argv[]) {
     const Config config = getConfigs("configs/default.cfg");
     config.print();
-    std::string fastqFileName = config.fastqFileName;
-    std::string queryFileName = config.queryFileName;
-    if(argc >= 2){fastqFileName = argv[1];}
-    if(argc >= 3){queryFileName = fastqFileName+ "query.p"+ argv[2];}
-    fastqFileName = "data/fastqFiles/" + fastqFileName + ".fastq";
-    queryFileName = "data/queries/" + queryFileName;
-    vector<string> sequences = getFastqData(fastqFileName);
-    vector<string> querySequences = getQueryData(queryFileName);
-    uint32_t range = 10*(203-31)*filesystem::file_size(fastqFileName)/(203*2 + 26*2);
-    // range = (range/(4096*8));
-    // range = range*(4096*8);
-    cout << "range: "<<range<<" bits, or "<<range/(8*1024*1024)<<" Mbs"<<endl;
-    BloomFilter bf(range, config.k, 1);
+
+    // std::string fastqFileName = config.fastqFileName;
+    // std::string queryFileName = config.queryFileName;
+    // if(argc >= 2){fastqFileName = argv[1];}
+    // if(argc >= 3){queryFileName = fastqFileName+ "query.p"+ argv[2];}
+    // fastqFileName = "data/fastqFiles/" + fastqFileName + ".fastq";
+    // queryFileName = "data/queries/" + queryFileName;
+    // vector<string> sequences = getFastqData(fastqFileName);
+    // vector<string> querySequences = getQueryData(queryFileName);
+    // uint32_t range = 10*(203-31)*filesystem::file_size(fastqFileName)/(203*2 + 26*2);
+    // // range = (range/(4096*8));
+    // // range = range*(4096*8);
+    // cout << "range: "<<range<<" bits, or "<<range/(8*1024*1024)<<" Mbs"<<endl;
+    // BloomFilter bf(range, config.k, 1);
+
+    vector<string> sequences = getFastqData("../data/" + config.fastqFileName + ".fastq");
+    // vector<string> querySequences = getQueryData("../data/" + config.queryFileName);
+    BloomFilter bf(config.range, config.k, 1);
 
     omp_set_num_threads(config.numThreads);
     Hasher *hasher[config.numThreads]; // each thread gets its own hasher
     for (uint32_t i = 0; i < config.numThreads; ++i) {
         hasher[i] = config.hashType == Config::MURMUR_HASH
-        ? static_cast<Hasher*>(new MurmurHasher(range, config.k, config.seed))
-        : static_cast<Hasher*>(new FuzzyHasher(range, config.k, 3, config.universalHashRange, config.seed));
+        ? static_cast<Hasher*>(new MurmurHasher(config.range, config.k, config.seed))
+        : static_cast<Hasher*>(new FuzzyHasher(config.range, config.k, config.kMer, config.universalHashRange, config.seed));
     }
     // uint32_t hashTimeAccu = 0, bfTimeAccu = 0;
     chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
@@ -59,10 +64,11 @@ int main(int argc, char* argv[]) {
     uint32_t fpCount = 0;
     t1 = chrono::high_resolution_clock::now();
     # pragma omp parallel for 
-    for (size_t i = 0; i < querySequences.size(); ++i) {
+    for (size_t i = 0; i < sequences.size(); ++i) {
         uint32_t threadId = omp_get_thread_num();
         uint32_t hashes[config.k];
-        hasher[threadId]->setSequence(querySequences[i]);
+        sequences[i][10] = 'B';
+        hasher[threadId]->setSequence(sequences[i]);
         chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
         bool fp = true;
         while (hasher[threadId]->hasNext()) {
@@ -77,7 +83,7 @@ int main(int argc, char* argv[]) {
     }
     t2 = chrono::high_resolution_clock::now();
     cout << "Query Time: " << chrono::duration_cast<chrono::microseconds>(t2 - t1).count()/1000000.0 << endl;
-    cout << "Number of False Positives: " << fpCount << endl;
+    cout << "False Positive Rate: " << static_cast<float>(fpCount) / sequences.size() << endl;
     // bf.release();
     return 0;
 }

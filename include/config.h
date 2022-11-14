@@ -19,10 +19,10 @@ struct Config {
     uint32_t universalHashRange;
     uint32_t seed;
     uint32_t hashType;
+    uint32_t kMer;
 
     void print() const {
-        cout << "Default configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; seed=" << seed << "; hashType=" << hashType << endl;
-        cout << "Override by passing arguments in that order"<<endl;
+        cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" << seed << "; hashType=" << hashType << endl;
     }
 };
 
@@ -47,6 +47,8 @@ Config getConfigs(string configFileName) {
             config.numThreads = stoul(value);
         } else if (key == "universal_hash_range") {
             config.universalHashRange = stoul(value);
+        } else if (key == "kmer") {
+            config.kMer = stoul(value);
         } else if (key == "seed") {
             config.seed = stoul(value);
         } else if (key == "hash") {
