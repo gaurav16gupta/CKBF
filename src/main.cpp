@@ -11,23 +11,25 @@
 
 using namespace std;
 
-int main() {
-    const Config config = getConfigs("../configs/default.cfg");
+int main(int argc, char* argv[]) {
+    const Config config = getConfigs("configs/default.cfg");
     config.print();
-
-    vector<string> sequences = getFastqData("../data/" + config.fastqFileName + ".fastq");
-    vector<string> querySequences = getQueryData("../data/" + config.queryFileName);
-    BloomFilter bf(config.range, config.k);
+    std::string fastqFileName = config.fastqFileName;
+    std::string queryFileName = config.queryFileName;
+    if(argc >= 2){fastqFileName = argv[1];}
+    if(argc >= 3){queryFileName = fastqFileName+ "query.p"+ argv[2];}
+    vector<string> sequences = getFastqData("data/fastqFiles/" + fastqFileName + ".fastq");
+    vector<string> querySequences = getQueryData("data/queries/" + queryFileName);
+    uint32_t range = 10*config.k*(203-31)*filesize(fastqFileName)*(1024*1024*1024)/(203*2 + 26*2);
+    BloomFilter bf(range, config.k);
 
     omp_set_num_threads(config.numThreads);
-
     Hasher *hasher[config.numThreads]; // each thread gets its own hasher
     for (uint32_t i = 0; i < config.numThreads; ++i) {
         hasher[i] = config.hashType == Config::MURMUR_HASH
-        ? static_cast<Hasher*>(new MurmurHasher(config.range, config.k, config.seed))
-        : static_cast<Hasher*>(new FuzzyHasher(config.range, config.k, 3, config.universalHashRange, config.seed));
+        ? static_cast<Hasher*>(new MurmurHasher(range, config.k, config.seed))
+        : static_cast<Hasher*>(new FuzzyHasher(range, config.k, 3, config.universalHashRange, config.seed));
     }
-
     uint32_t hashTimeAccu = 0, bfTimeAccu = 0;
     # pragma omp parallel for reduction(+:hashTimeAccu, bfTimeAccu)
     for (size_t i = 0; i < sequences.size(); ++i) {
@@ -45,7 +47,6 @@ int main() {
             bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
         }
     }
-
     cout << "Hash Time: " << hashTimeAccu << "; BF Insert Time: " << bfTimeAccu << endl;
 
     hashTimeAccu = 0, bfTimeAccu = 0;
