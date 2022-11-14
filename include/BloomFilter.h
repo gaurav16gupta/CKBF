@@ -8,8 +8,10 @@ public:
     BloomFilter(uint32_t sz, uint32_t k);
     void insert(uint32_t *hashes);
     bool test(uint32_t *hashes);
+    uint32_t count() const;
 
     uint8_t *bits;
+    uint32_t size;
     uint32_t k;
 };
 
