@@ -55,7 +55,7 @@ int main() {
     for (size_t i = 0; i < sequences.size(); ++i) {
         uint32_t threadId = omp_get_thread_num();
         uint32_t hashes[config.k];
-        sequences[i][10] = 'B';
+        // sequences[i][10] = 'B';
         hasher[threadId]->setSequence(sequences[i]);
         chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
         bool fp = true;
