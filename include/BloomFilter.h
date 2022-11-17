@@ -1,6 +1,6 @@
 #ifndef _MYBLOOM_
 #define _MYBLOOM_
-
+#include <atomic>
 #include <iostream>
 
 class BloomFilter{
@@ -10,7 +10,7 @@ public:
     bool test(uint32_t *hashes);
     uint32_t count() const;
 
-    uint8_t *bits;
+    std::atomic<uint8_t> *bits;
     uint32_t size;
     uint32_t k;
 };
