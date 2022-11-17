@@ -1,6 +1,6 @@
 #ifndef _MYBLOOM_
 #define _MYBLOOM_
-
+#include <atomic>
 #include <iostream>
 #include <fcntl.h>
 
