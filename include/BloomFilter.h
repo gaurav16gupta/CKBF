@@ -6,7 +6,7 @@
 
 class BloomFilter{
 public:
-    BloomFilter(uint32_t sz, uint32_t k_, bool disk);
+    BloomFilter(uint64_t sz, uint32_t k_, bool disk);
     void insert(uint32_t *hashes);
     bool test(uint32_t *hashes);
     uint32_t count() const;

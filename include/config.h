@@ -13,7 +13,7 @@ struct Config {
 
     string fastqFileName;
     string queryFileName;
-    uint32_t range;
+    uint64_t range;
     uint32_t k; // number of hashes
     uint32_t numThreads;
     uint32_t universalHashRange;
