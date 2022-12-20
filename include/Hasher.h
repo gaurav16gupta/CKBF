@@ -88,7 +88,7 @@ public:
         for (uint32_t i = 0; i < num_hashes; ++i) {
             minValue = UINT32_MAX;
             for (uint32_t j = 0; j <= 31 - kMer; ++j) {
-                MurmurHash3_x86_32(sequence + pos + j, kMer, seed + i * 31 + j, &hashValue);
+                MurmurHash3_x86_32(sequence + pos + j, kMer, seed + i, &hashValue);
                 minValue = min(hashValue, minValue);
             }
             MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
@@ -104,34 +104,59 @@ protected:
     const uint32_t kMer;
     const uint32_t universalHashRange;
     const uint32_t minHashRange;
-    uint32_t *tree;
-    uint8_t *indices;
+    uint32_t *trees;
+    uint32_t index_to_pop;
 public:
     EfficientFuzzyHasher(uint32_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
-        : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange), minHashRange(range / universalHashRange), tree(new uint32_t[63 * 4]), indices(new uint8_t[31 * 4]) {
-        if (range % universalHashRange != 0) {
-            cerr << "Hash range=" << range << " is not a multiple of " << universalHashRange << '.' << endl;
-        }
-        fill(tree, tree + 63 * 4, UINT32_MAX);
-        for (uint32_t i = 0; i < 31 * 4; ++i) {
-            indices[i] = i % (31 * 4);
+        : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange), minHashRange(range), trees(new uint32_t[((32 - kMer) * 2 - 1) * num_hashes]), index_to_pop(0) {
+        fill(trees, trees + ((32 - kMer) * 2 - 1) * num_hashes, UINT32_MAX);
+    }
+
+    void buildTrees() {
+        for (uint32_t i = 0; i < num_hashes; ++i) {
+            for (int32_t j = kMer - 2; j >= 0; --j) {
+                trees[((32 - kMer) * 2 - 1) * i + j] = min(
+                    trees[((32 - kMer) * 2 - 1) * i + j * 2 + 1],
+                    trees[((32 - kMer) * 2 - 1) * i + j * 2 + 2]
+                );
+            }
         }
     }
 
     void hash(uint32_t * out) override {
-        if (tree[0] == UINT32_MAX) {
+        if (pos == 0) {
             // initial tree construction
+            uint32_t hashValue, minValue;
             for (uint32_t i = 0; i < num_hashes; ++i) {
-                uint32_t hashValue, minValue = UINT32_MAX;
+                minValue = UINT32_MAX;
                 for (uint32_t j = 0; j <= 31 - kMer; ++j) {
-                    MurmurHash3_x86_32(sequence + pos + j, kMer, seed + i * 31 + j, &hashValue);
+                    MurmurHash3_x86_32(sequence + pos + j, kMer, seed + i, &hashValue);
                     minValue = min(hashValue, minValue);
+                    trees[((32 - kMer) * 2 - 1) * i + (kMer - 1 + j)] = hashValue;
                 }
                 MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
-                out[i] += (minValue % minHashRange) * universalHashRange;
+                out[i] += minValue % (minHashRange - universalHashRange);
             }
-            pos += 1;
+            buildTrees();
+        } else {
+            uint32_t hashValue, new_index;
+            for (uint32_t i = 0; i < num_hashes; ++i) {
+                new_index = kMer - 1 + index_to_pop;
+                MurmurHash3_x86_32(sequence + pos + 31 - kMer, kMer, seed + i, &hashValue);
+                trees[((32 - kMer) * 2 - 1) * i + new_index] = hashValue;
+                while (new_index > 0) {
+                    new_index = (new_index - 1) / 2;
+                    trees[((32 - kMer) * 2 - 1) * i + new_index] = min(
+                        trees[((32 - kMer) * 2 - 1) * i + new_index * 2 + 1],
+                        trees[((32 - kMer) * 2 - 1) * i + new_index * 2 + 2]
+                    );
+                }
+                MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
+                out[i] += trees[((32 - kMer) * 2 - 1) * i] % (minHashRange - universalHashRange);
+            }
+            index_to_pop = (index_to_pop + 1) % (32 - kMer);
         }
+        pos += 1;
     }
 };
 
