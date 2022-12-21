@@ -2,15 +2,22 @@
 #define _MYBLOOM_
 
 #include <iostream>
+#include <fcntl.h>
 
 class BloomFilter{
 public:
-    BloomFilter(uint32_t sz, uint32_t k);
+    BloomFilter(uint32_t sz, uint32_t k_, bool disk);
     void insert(uint32_t *hashes);
     bool test(uint32_t *hashes);
+    // void release();
 
     uint8_t *bits;
+    int file_write;
+
     uint32_t k;
 };
 
 #endif
+
+
+

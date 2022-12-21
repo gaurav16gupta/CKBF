@@ -36,10 +36,4 @@ vector<string> getQueryData(string fileName) {
     return lines;
 }
 
-ifstream::pos_type filesize(std::string filename)
-{
-    ifstream in(filename, ifstream::ate | ifstream::binary);
-    return in.tellg(); 
-}
-
 #endif
