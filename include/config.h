@@ -21,7 +21,8 @@ struct Config {
     uint32_t hashType;
 
     void print() const {
-        cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; seed=" << seed << "; hashType=" << hashType << endl;
+        cout << "Default configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; seed=" << seed << "; hashType=" << hashType << endl;
+        cout << "Override by passing arguments in that order"<<endl;
     }
 };
 
@@ -34,7 +35,6 @@ Config getConfigs(string configFileName) {
         size_t equalPos = line.find('=');
         string key = line.substr(0, equalPos);
         string value = line.substr(equalPos + 1);
-
         if (key == "fastq_file_name") {
             config.fastqFileName = value;
         } else if (key == "query_file_name") {
