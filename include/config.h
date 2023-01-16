@@ -16,13 +16,14 @@ struct Config {
     uint64_t range;
     uint32_t k; // number of hashes
     uint32_t numThreads;
-    uint32_t universalHashRange;
+    uint32_t universalHashRange = 0;
     uint32_t seed;
     uint32_t hashType;
-    uint32_t kMer;
+    uint32_t kMer = 0;
+    uint32_t poison = 0;
 
     void print() const {
-        cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" << seed << "; hashType=" << hashType << endl;
+        cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" << seed << "; hashType=" << hashType << "; poison=" << poison  << endl;
     }
 };
 
@@ -60,6 +61,8 @@ Config getConfigs(string configFileName) {
             } else {
                 cerr << value << " is an unrecognized hash type" << endl;
             }
+        } else if (key == "poison") {
+            config.poison = stoul(value);
         } else {
             cerr << key << " is an unrecognized config key" << endl;
         }
