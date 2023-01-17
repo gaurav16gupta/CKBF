@@ -13,16 +13,18 @@ struct Config {
 
     string fastqFileName;
     string queryFileName;
-    uint32_t range;
+    uint64_t range;
     uint32_t k; // number of hashes
     uint32_t numThreads;
-    uint32_t universalHashRange;
+    uint32_t universalHashRange = 0;
     uint32_t seed;
     uint32_t hashType;
+    uint32_t kMer = 0;
+    uint32_t poison = 0;
+    bool disk = false;
 
     void print() const {
-        cout << "Default configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; seed=" << seed << "; hashType=" << hashType << endl;
-        cout << "Override by passing arguments in that order"<<endl;
+        cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" << seed << "; hashType=" << (hashType ? "fuzzy" : "murmur") << "; poison=" << poison << "; disk=" << (disk ? "yes" : "no") << endl;
     }
 };
 
@@ -47,6 +49,8 @@ Config getConfigs(string configFileName) {
             config.numThreads = stoul(value);
         } else if (key == "universal_hash_range") {
             config.universalHashRange = stoul(value);
+        } else if (key == "kmer") {
+            config.kMer = stoul(value);
         } else if (key == "seed") {
             config.seed = stoul(value);
         } else if (key == "hash") {
@@ -57,6 +61,10 @@ Config getConfigs(string configFileName) {
             } else {
                 cerr << value << " is an unrecognized hash type" << endl;
             }
+        } else if (key == "poison") {
+            config.poison = stoul(value);
+        } else if (key == "disk") {
+            config.disk = stoul(value) > 0;
         } else {
             cerr << key << " is an unrecognized config key" << endl;
         }
