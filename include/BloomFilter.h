@@ -14,7 +14,7 @@ public:
 
     uint8_t *bits;
     int file_write;
-    uint32_t size;
+    uint64_t size;
     uint32_t k;
 };
 
