@@ -19,6 +19,7 @@ struct Config {
     uint32_t universalHashRange;
     uint32_t seed;
     uint32_t hashType;
+    bool disk;
 
     void print() const {
         cout << "Default configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; seed=" << seed << "; hashType=" << hashType << endl;
@@ -49,6 +50,8 @@ Config getConfigs(string configFileName) {
             config.universalHashRange = stoul(value);
         } else if (key == "seed") {
             config.seed = stoul(value);
+        } else if (key == "disk") {
+            config.disk = stoul(value);
         } else if (key == "hash") {
             if (value == "murmur") {
                 config.hashType = Config::MURMUR_HASH;
