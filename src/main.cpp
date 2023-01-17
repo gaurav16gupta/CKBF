@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     const Config config = getConfigs(argv[1]);
     config.print();
 
-    vector<string> sequences = getFastqData("/home/apd10/code/CKBF/data/" + config.fastqFileName + ".fastq");
+    vector<string> sequences = getFastqData("./data/" + config.fastqFileName + ".fastq");
     // vector<string> querySequences = getQueryData("../data/" + config.queryFileName);
     BloomFilter bf(config.range, config.k, 1);
 
