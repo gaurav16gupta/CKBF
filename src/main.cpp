@@ -13,11 +13,30 @@
 
 using namespace std;
 
+char rep(char x) {
+    switch(x) {
+        case 'A':
+            return 'C';
+        case 'C':
+            return 'G';
+        case 'G':
+            return 'T';
+        case 'T':
+            return 'A';
+        default:
+            return 'X';
+    }
+}
 
 string poison(int str_id, string s, int strength) {
     srand(10256*str_id);
+    int l = max((size_t)32, rand() % s.length());
+    int start = min((size_t)(l-32), rand() % s.length());
+    s = s.substr(start, l);
+    int temp;
     for(int i=0; i < strength; i++) {
-        s[rand()%s.length()] = 'X';
+        temp = rand()%s.length();
+        s[temp] = rep(temp);
     }
     return s;
 }
