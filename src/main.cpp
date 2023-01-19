@@ -36,7 +36,9 @@ int main(int argc, char** argv) {
     for (uint32_t i = 0; i < config.numThreads; ++i) {
         hasher[i] = config.hashType == Config::MURMUR_HASH
         ? static_cast<Hasher*>(new MurmurHasher(static_cast<uint32_t>(config.range), config.k, config.seed))
-        : static_cast<Hasher*>(new EfficientFuzzyHasher(static_cast<uint32_t>(config.range), config.k, config.kMer, config.universalHashRange, config.seed));
+        : (config.hashType == Config::BRUTE_FORCE_FUZZY_HASH
+            ? static_cast<Hasher*>(new FuzzyHasher(static_cast<uint32_t>(config.range), config.k, config.kMer, config.universalHashRange, config.seed))
+            : static_cast<Hasher*>(new EfficientFuzzyHasher(static_cast<uint32_t>(config.range), config.k, config.kMer, config.universalHashRange, config.seed)));
     }
     uint32_t hashTimeAccu = 0, bfTimeAccu = 0, counter = 0;
     chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;

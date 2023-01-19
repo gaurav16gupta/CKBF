@@ -10,6 +10,7 @@ using namespace std;
 struct Config {
     static const uint32_t MURMUR_HASH = 0;
     static const uint32_t FUZZY_HASH = 1;
+    static const uint32_t BRUTE_FORCE_FUZZY_HASH = 2;
 
     string fastqFileName;
     string queryFileName;
@@ -58,6 +59,8 @@ Config getConfigs(string configFileName) {
                 config.hashType = Config::MURMUR_HASH;
             } else if (value == "fuzzy") {
                 config.hashType = Config::FUZZY_HASH;
+            } else if (value == "brute_force_fuzzy") {
+                config.hashType = Config::BRUTE_FORCE_FUZZY_HASH;
             } else {
                 cerr << value << " is an unrecognized hash type" << endl;
             }

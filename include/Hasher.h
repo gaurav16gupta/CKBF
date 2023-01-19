@@ -99,24 +99,47 @@ public:
     }
 };
 
+static void print_trees(uint32_t *trees, uint32_t len, uint32_t num) {
+    for (uint32_t j = 0; j < num; ++j) {
+        for (uint32_t i = 0; i < len; ++i) {
+            cout << trees[len * j + i] << ' ';
+            if (!((i + 1) & (i + 2))) {
+                cout << endl;
+            }
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+static uint32_t next_pow_of_2(uint32_t x) {
+    uint32_t power = 1;
+    while (power < x) {
+        power *= 2;
+    }
+    return power;
+}
+
 class EfficientFuzzyHasher : public Hasher {
 protected:
     const uint32_t kMer;
     const uint32_t universalHashRange;
     const uint32_t minHashRange;
+    uint32_t tree_length;
     uint32_t *trees;
     uint32_t index_to_pop;
 public:
     EfficientFuzzyHasher(uint32_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
-        : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange), minHashRange(range), trees(new uint32_t[((32 - kMer) * 2 - 1) * num_hashes]), index_to_pop(0) {
-        fill(trees, trees + ((32 - kMer) * 2 - 1) * num_hashes, UINT32_MAX);
+        : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange), minHashRange(range),
+          tree_length(next_pow_of_2(32 - kMer) * 2 - 1), trees(new uint32_t[tree_length * num_hashes]), index_to_pop(0) {
+        fill(trees, trees + tree_length * num_hashes, UINT32_MAX);
     }
 
     void buildTrees() {
         uint32_t idx1;
         for (uint32_t i = 0; i < num_hashes; ++i) {
-            idx1 = ((32 - kMer) * 2 - 1) * i ;
-            for (int32_t j = kMer - 2; j >= 0; --j) {
+            idx1 = tree_length * i;
+            for (int32_t j = tree_length / 2 - 1; j >= 0; --j) {
                 trees[idx1 + j] = min(
                     trees[idx1 + j * 2 + 1],
                     trees[idx1 + j * 2 + 2]
@@ -132,7 +155,7 @@ public:
             // initial tree construction
             for (i = 0; i < num_hashes; ++i) {
                 minValue = UINT32_MAX;
-                idx1 = ((32 - kMer) * 2 - 1) * i + (kMer - 1);
+                idx1 = tree_length * i + tree_length / 2;
                 seed1 = seed + i;
                 for (j = 0; j <= 31 - kMer; ++j) {
                     MurmurHash3_x86_32(sequence + pos + j, kMer, seed1, &hashValue);
@@ -143,11 +166,12 @@ public:
                 out[i] += minValue % (minHashRange - universalHashRange);
             }
             buildTrees();
+            index_to_pop = 0;
         } else {
             for (i = 0; i < num_hashes; ++i) {
-                new_index = kMer - 1 + index_to_pop;
+                new_index = tree_length / 2 + index_to_pop;
                 seed1 = seed + i;
-                idx1 = ((32 - kMer) * 2 - 1) * i;
+                idx1 = tree_length * i;
                 MurmurHash3_x86_32(sequence + pos + 31 - kMer, kMer, seed1, &hashValue);
                 trees[idx1 + new_index] = hashValue;
                 while (new_index > 0) {
@@ -157,8 +181,8 @@ public:
                         trees[idx1 + new_index * 2 + 2]
                     );
                 }
-                MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
-                out[i] += trees[((32 - kMer) * 2 - 1) * i] % (minHashRange - universalHashRange);
+                MurmurHash3_x86_32(sequence + pos, 31, seed1, out + i, universalHashRange);
+                out[i] += trees[idx1] % (minHashRange - universalHashRange);
             }
             index_to_pop = (index_to_pop + 1) % (32 - kMer);
         }
