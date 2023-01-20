@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -34,6 +35,26 @@ vector<string> getQueryData(string fileName) {
         line_num += 1;
     }
     return lines;
+}
+
+void getQueryforArBF(string queryFilename, vector<string>& queries, vector<vector<uint32_t>>& GT, uint32_t N) {
+    ifstream queryFile(queryFilename);
+    string line;
+    uint32_t line_num = 0;
+    while (getline(queryFile, line)) {
+        stringstream is;
+        is<<line;
+        string vals;
+        vector <string> op;
+        bool first =true;
+        while( getline (is, vals, ',')){
+            if (first) {queries[line_num] = vals; first=false;}
+            else {
+                if (stoi(vals)<=N) GT[line_num].push_back(stoi(vals));   
+            }
+        }    
+        line_num += 1;
+    }
 }
 
 #endif
