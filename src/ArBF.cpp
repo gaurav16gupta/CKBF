@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
     const Config config = getConfigs(argv[1]);
     config.print();
     uint32_t N = 100;
-    string filellistname = "data/fileList.txt";
+    string filellistname = config.fastqFileName;
     uint64_t MAXRANGE = 8589934592; //2^33
 
     Hasher *hasher[config.numThreads]; // each thread gets its own hasher
@@ -71,8 +71,8 @@ int main(int argc, char** argv) {
     if (n<N) printf("WARNING: less than %d .fastq files!", N);
 
     
-    string queryFile = "data/queryFile.txt";
-    uint32_t nq = 10000;
+    string queryFile = config.queryFileName;
+    uint32_t nq = 1000;
     vector<string> queries(nq);
     vector<vector<uint32_t>> GT(nq);
     getQueryforArBF(queryFile, queries, GT, N);
