@@ -35,7 +35,7 @@ void ArBF::insert(string folder, const Config config){
                 string fname = ent->d_name;
                 vector<string> sequences = getFastqData("./" + folder+ fname);
                 range = config.rangefactor*config.k*sequences.size();
-                ArBF_array[seen] = new BloomFilter(range, config.k, config.disk);
+                ArBF_array[seen] = new BloomFilter(range, config.k, config.disk, fileName.substr(0,fileName.length() - 6));
 
                 Hasher *hasher[config.numThreads]; // each thread gets its own hasher
                 for (uint32_t i = 0; i < config.numThreads; ++i) {
