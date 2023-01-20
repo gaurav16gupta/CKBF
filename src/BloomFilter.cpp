@@ -4,10 +4,10 @@
 
 using namespace std;
 
-BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk)
+BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name)
   : size(sz), k(k_) {
   if (disk) {
-    file_write = open("bits.dat", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+    file_write = open(("results/"+name+".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
     posix_fallocate(file_write, 0, sz >> 3); // sz >> 3 shd be multiple of 4096
     bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_WRITE, MAP_SHARED, file_write, 0));
   } else {

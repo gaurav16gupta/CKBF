@@ -47,8 +47,7 @@ int main(int argc, char** argv) {
 
     vector<string> sequences = getFastqData("./data/" + config.fastqFileName + ".fastq");
     // vector<string> querySequences = getQueryData("../data/" + config.queryFileName);
-    BloomFilter bf(config.range, config.k, config.disk);
-
+    BloomFilter bf(config.range, config.k, config.disk, config.fastqFileName);
     // omp_set_num_threads(config.numThreads);
     assert(config.numThreads == 1);
     Hasher *hasher[config.numThreads]; // each thread gets its own hasher
@@ -59,7 +58,7 @@ int main(int argc, char** argv) {
             ? static_cast<Hasher*>(new FuzzyHasher(static_cast<uint32_t>(config.range), config.k, config.kMer, config.universalHashRange, config.seed))
             : static_cast<Hasher*>(new EfficientFuzzyHasher(static_cast<uint32_t>(config.range), config.k, config.kMer, config.universalHashRange, config.seed)));
     }
-    uint32_t hashTimeAccu = 0, bfTimeAccu = 0, counter = 0;
+    uint32_t hashTimeAccu = 0, bfTimeAccu = 0;
     chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
     // # pragma omp parallel for 
     for (size_t i = 0; i < sequences.size(); ++i) {
@@ -74,12 +73,11 @@ int main(int argc, char** argv) {
             t3 = chrono::high_resolution_clock::now();
             hashTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
             bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
-            counter += 1;
         }
     }
     cout << "Hash Time: " << hashTimeAccu << "; Insert Time: " << bfTimeAccu << endl;
     cout << "BF Packing: " << bf.count() << '/' << bf.size << endl;
-    cout << "# of items inserted: " << counter << endl;
+    cout << "# of items inserted: " << sequences.size() << endl;
 
     // hashTimeAccu = 0, bfTimeAccu = 0;
     uint32_t fpCount = 0;
@@ -106,3 +104,6 @@ int main(int argc, char** argv) {
     // bf.release();
     return 0;
 }
+
+// To Do:
+// 1) Release/delete Bloom filter from disk

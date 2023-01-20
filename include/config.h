@@ -23,9 +23,14 @@ struct Config {
     uint32_t kMer = 0;
     uint32_t poison = 0;
     bool disk = false;
+    float rangefactor=1;
 
     void print() const {
-        cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" << seed << "; hashType=" << (hashType ? "fuzzy" : "murmur") << "; poison=" << poison << "; disk=" << (disk ? "yes" : "no") << endl;
+        cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName 
+        << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads 
+        << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" 
+        << seed << "; hashType=" << (hashType ? "fuzzy" : "murmur") << "; poison=" << poison 
+        << "; disk=" << (disk ? "yes" : "no") << endl;
     }
 };
 
@@ -68,6 +73,8 @@ Config getConfigs(string configFileName) {
             config.poison = stoul(value);
         } else if (key == "disk") {
             config.disk = stoul(value) > 0;
+        } else if (key == "rangefactor") {
+            config.rangefactor = stoul(value);
         } else {
             cerr << key << " is an unrecognized config key" << endl;
         }
