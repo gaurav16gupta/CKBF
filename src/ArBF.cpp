@@ -3,7 +3,6 @@
 #include <vector>
 #include <string>
 #include <chrono>
-// #include <omp.h>
 #include "BloomFilter.h"
 #include "utils.h"
 #include "config.h"
@@ -11,18 +10,20 @@
 #include <assert.h>
 #include <cstdlib>
 #include <dirent.h>
-#include <ArBF.h>
 
 using namespace std;
 
-ArBF::ArBF(uint32_t N ){
-    N =N;
-    ArBF_array = new BloomFilter*[N]; //array of pointers
+int main(int argc, char** argv) {
+    const Config config = getConfigs(argv[1]);
+    config.print();
+    uint32_t N;
+    string filellistname;
+
     uint32_t numInsert[N];
     uint32_t rangeOffset[N];
-}
+    BloomFilter** ArBF_array; 
+    ArBF_array = new BloomFilter*[N]; //array of pointers
 
-void ArBF::insert(string filellistname, const Config config){
     uint32_t range;
     uint32_t n = 0;
 
@@ -63,28 +64,6 @@ void ArBF::insert(string filellistname, const Config config){
         printf("%s\t", fileName.c_str());
     }
     if (n<N) printf("WARNING: less than %d .fastq files!", N);
-    
-    // else cerr <<"can open the folder: "<< folder<<endl;
+
+    return 0;
 }
-
-
-// void insert (string query_key, int len){
-// }
-
-
-// vector<uint32_t> ArBF::query (string query_key, int len){
-
-// }
-//   set<int> res;
-
-//   vector<uint> check = myhash(query_key.c_str(), query_key.size() , k, range); //hash values correspondign to the keys
-//     // opvals[r].push_back(Rambo_array[b + B*r]->test(check)); //will op the membership test output
-//   for (int b=0; b<K; b++){
-//     // cout<<"query at:  "<<check[0]<<endl;
-//     if (ArBF_array[b]->test(check)){
-//       res.insert(b);
-//     }
-//   }
-//   return res;
-// }
-
