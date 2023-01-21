@@ -29,7 +29,7 @@ struct Config {
         cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName 
         << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads 
         << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" 
-        << seed << "; hashType=" << (hashType ? "fuzzy" : "murmur") << "; poison=" << poison 
+        << seed << "; hashType=" << (hashType == MURMUR_HASH ? "murmur" : (hashType == FUZZY_HASH ? "fuzzy" : "brute_force_fuzzy")) << "; poison=" << poison 
         << "; disk=" << (disk ? "yes" : "no") << endl;
     }
 };
