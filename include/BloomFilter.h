@@ -9,11 +9,12 @@ public:
     BloomFilter(uint64_t sz, uint32_t k_, bool disk, std::string name);
     void insert(uint64_t *hashes);
     bool test(uint64_t *hashes);
+    void release();
     uint64_t count() const;
     // void release();
 
     uint8_t *bits;
-    int file_write;
+    int file_;
     uint64_t size;
     uint32_t k;
 };

@@ -16,7 +16,7 @@ using namespace std;
 int main(int argc, char** argv) {
     const Config config = getConfigs(argv[1]);
     config.print();
-    uint32_t N = 100;
+    uint32_t N = 5;
     string filellistname = config.fastqFileName;
     uint64_t MAXRANGE = 8589934592; //2^33
 
@@ -63,8 +63,8 @@ int main(int argc, char** argv) {
                 // bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
                 // counter[n] += 1;
             }
-            
         }
+        ArBF_array[n]->release();
         n++;
         numInsert[n] = sequences.size();
         ranges[n] = range;

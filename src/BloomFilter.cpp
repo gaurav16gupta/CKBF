@@ -1,16 +1,27 @@
 #include "BloomFilter.h"
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sstream>
 
 using namespace std;
 
-BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name)
+BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name="bits W")
   : size(sz), k(k_) {
   if (disk) {
-    file_write = open(("./results/"+name+".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
-    if (file_write<=0) cerr<<"can't open file "<<"./results/"+name+".dat"<<" to save BF on disk"<<endl;
-    posix_fallocate(file_write, 0, sz >> 3); // sz >> 3 shd be multiple of 4096
-    bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_WRITE, MAP_SHARED, file_write, 0));
+    string id, rw;
+    stringstream s(name);
+    s>>id>>rw;
+    if (rw =="R"){
+      int file_ = open(("./results/"+id+".dat").c_str(), O_RDONLY, 0);
+      if (file_<=0) cerr<<"can't open file "<<"./results/"+id+".dat"<<" to load BF on disk"<<endl;
+      bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_READ, MAP_SHARED, file_, 0));
+    }
+    if (rw =="W"){
+      file_ = open(("./results/"+id+".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
+      if (file_<=0) cerr<<"can't open file "<<"./results/"+id+".dat"<<" to save BF on disk"<<endl;
+      posix_fallocate(file_, 0, sz >> 3); // sz >> 3 shd be multiple of 4096
+      bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_WRITE, MAP_SHARED, file_, 0));
+    }  
   } else {
     bits = new uint8_t[sz >> 3];
   }
@@ -33,10 +44,9 @@ bool BloomFilter::test(uint64_t *hashes) {
   return result;
 }
 
-// void BloomFilter::release() {
-//   munmap (bits, sz >> 3);
-//   close (file_write);
-// }
+void BloomFilter::release() {
+  munmap (bits, size >> 3);
+}
 
 // make sure bits is all zeros
 // https://bertvandenbroucke.netlify.app/2019/12/08/memory-mapping-files/
