@@ -43,7 +43,6 @@ int main(int argc, char** argv) {
         vector<string> sequences = getFastqData("./data/fastqFiles/"+ fileName);
         range = config.rangefactor*config.k*sequences.size();
         ArBF_array[n] = new BloomFilter(range, config.k, config.disk, fileName.substr(0,fileName.length() - 6));
-        cout<< fileName.c_str()<<" " << sequences.size()<<endl;
         // # pragma omp parallel for 
         for (size_t i = 0; i < sequences.size(); ++i) {
             uint32_t hashes[config.k];
@@ -55,6 +54,7 @@ int main(int argc, char** argv) {
                 for (uint8_t k = 0; k < config.k; ++k){
                     hashes[k] = hashes[k]%range;
                 }
+                
                 // t2 = chrono::high_resolution_clock::now();
                 ArBF_array[n]->insert(hashes);
                 // t3 = chrono::high_resolution_clock::now();
@@ -62,13 +62,16 @@ int main(int argc, char** argv) {
                 // bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
                 // counter[n] += 1;
             }
+            
         }
         n++;
         numInsert[n] = sequences.size();
         ranges[n] = range;
+        printf("%s\t", fileName.c_str());
     }
     if (n<N) printf("WARNING: less than %d .fastq files!", N);
 
+    
     string queryFile = config.queryFileName;
     uint32_t nq = 1000;
     vector<string> queries(nq);
