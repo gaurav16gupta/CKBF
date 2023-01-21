@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
         vector<string> sequences = getFastqData("./data/fastqFiles/"+ fileName);
         range = config.rangefactor*config.k*sequences.size();
         ArBF_array[n] = new BloomFilter(range, config.k, config.disk, fileName.substr(0,fileName.length() - 6));
+        cout<<fileName.c_str()<<" "<<sequences.size()<<endl;
         // # pragma omp parallel for 
         for (size_t i = 0; i < sequences.size(); ++i) {
             uint32_t hashes[config.k];
@@ -67,7 +68,7 @@ int main(int argc, char** argv) {
         n++;
         numInsert[n] = sequences.size();
         ranges[n] = range;
-        printf("%s\t", fileName.c_str());
+        
     }
     if (n<N) printf("WARNING: less than %d .fastq files!", N);
 
