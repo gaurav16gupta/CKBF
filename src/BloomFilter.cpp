@@ -7,7 +7,8 @@ using namespace std;
 BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name)
   : size(sz), k(k_) {
   if (disk) {
-    file_write = open(("results/"+name+".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
+    file_write = open(("./results/"+name+".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
+    if (file_write<=0) cerr<<"can't open file "<<"./results/"+name+".dat"<<" to save BF on disk"<<endl;
     posix_fallocate(file_write, 0, sz >> 3); // sz >> 3 shd be multiple of 4096
     bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_WRITE, MAP_SHARED, file_write, 0));
   } else {

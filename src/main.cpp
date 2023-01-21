@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     const Config config = getConfigs(argv[1]);
     config.print();
 
-    vector<string> sequences = getFastqData("./data/" + config.fastqFileName + ".fastq");
+    vector<string> sequences = getFastqData("./data/fastqFiles/" + config.fastqFileName + ".fastq");
     // vector<string> querySequences = getQueryData("../data/" + config.queryFileName);
     BloomFilter bf(config.range, config.k, config.disk, config.fastqFileName);
     // omp_set_num_threads(config.numThreads);
