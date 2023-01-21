@@ -17,13 +17,14 @@ BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name)
 }
 
 
-void BloomFilter::insert(uint32_t *hashes) {
+void BloomFilter::insert(uint64_t *hashes) {
   // TODO: hardcode for loop
   for (uint32_t i = 0; i < k; ++i) {
     bits[hashes[i] >> 3] |= 1 << (hashes[i] & 7);
   }
 }
-bool BloomFilter::test(uint32_t *hashes) {
+
+bool BloomFilter::test(uint64_t *hashes) {
   // TODO: compare with using if; hardcode for loop
   bool result = true;
   for (uint32_t i = 0; i < k; ++i) {
@@ -40,8 +41,8 @@ bool BloomFilter::test(uint32_t *hashes) {
 // make sure bits is all zeros
 // https://bertvandenbroucke.netlify.app/2019/12/08/memory-mapping-files/
 
-uint32_t BloomFilter::count() const {
-  uint32_t cnt = 0;
+uint64_t BloomFilter::count() const {
+  uint64_t cnt = 0;
   for (uint64_t i = 0; i < size >> 3; ++i) {
     uint8_t num = bits[i];
     while (num > 0) {

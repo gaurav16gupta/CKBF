@@ -53,16 +53,16 @@ int main(int argc, char** argv) {
     Hasher *hasher[config.numThreads]; // each thread gets its own hasher
     for (uint32_t i = 0; i < config.numThreads; ++i) {
         hasher[i] = config.hashType == Config::MURMUR_HASH
-        ? static_cast<Hasher*>(new MurmurHasher(static_cast<uint32_t>(config.range), config.k, config.seed))
+        ? static_cast<Hasher*>(new MurmurHasher(config.range, config.k, config.seed))
         : (config.hashType == Config::BRUTE_FORCE_FUZZY_HASH
-            ? static_cast<Hasher*>(new FuzzyHasher(static_cast<uint32_t>(config.range), config.k, config.kMer, config.universalHashRange, config.seed))
-            : static_cast<Hasher*>(new EfficientFuzzyHasher(static_cast<uint32_t>(config.range), config.k, config.kMer, config.universalHashRange, config.seed)));
+            ? static_cast<Hasher*>(new FuzzyHasher(config.range, config.k, config.kMer, config.universalHashRange, config.seed))
+            : static_cast<Hasher*>(new EfficientFuzzyHasher(config.range, config.k, config.kMer, config.universalHashRange, config.seed)));
     }
     uint32_t hashTimeAccu = 0, bfTimeAccu = 0;
     chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
     // # pragma omp parallel for 
     for (size_t i = 0; i < sequences.size(); ++i) {
-        uint32_t hashes[config.k];
+        uint64_t hashes[config.k];
         uint32_t threadId = 0; // omp_get_thread_num();
         hasher[threadId]->setSequence(sequences[i]);
         while (hasher[threadId]->hasNext()) {
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
     // # pragma omp parallel for 
     for (size_t i = 0; i < sequences.size(); ++i) {
         uint32_t threadId = 0; // omp_get_thread_num();
-        uint32_t hashes[config.k];
+        uint64_t hashes[config.k];
         sequences[i] = poison(i, sequences[i], config.poison);
         hasher[threadId]->setSequence(sequences[i]);
         bool fp = true;
