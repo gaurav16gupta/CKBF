@@ -21,7 +21,8 @@ BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name="bits 
       if (file_<=0) cerr<<"can't open file "<<"./results/"+id+".dat"<<" to save BF on disk"<<endl;
       posix_fallocate(file_, 0, sz >> 3); // sz >> 3 shd be multiple of 4096
       bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_WRITE, MAP_SHARED, file_, 0));
-    }  
+    }
+    else{cerr<<"Yo! Mention R/W after Bloom filter file name and a space"<<endl;}  
   } else {
     bits = new uint8_t[sz >> 3];
   }

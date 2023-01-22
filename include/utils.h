@@ -57,4 +57,26 @@ void getQueryforArBF(string queryFilename, vector<string>& queries, vector<vecto
     }
 }
 
+
+// Vector reader
+// template<typename T>
+vector<uint32_t> read_vector(const std::string& filename) {
+    std::ifstream file(filename);
+    std::vector<uint32_t> result;
+    uint32_t value;
+    while (file >> value) {
+        result.push_back(value);
+    }
+    return result;
+}
+
+// Vector writer 
+void write_vector(const std::string& filename, const std::vector<uint32_t>& vector) { 
+    std::ofstream file(filename); 
+    for (const auto& element : vector) { 
+        file << element << " "; 
+    } 
+    file.close(); 
+}
+
 #endif

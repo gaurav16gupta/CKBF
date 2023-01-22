@@ -104,6 +104,3 @@ int main(int argc, char** argv) {
     bf.release();
     return 0;
 }
-
-// To Do:
-// 1) Release/delete Bloom filter from disk
