@@ -132,3 +132,4 @@ int main(int argc, char** argv) {
 //todo: 
 // 1) choice of ABF experiment in RAM, use disk flag (if 0) to save and load BF arrays n RAM 
 // 2) stop when first kmer gives False, or calculate the %  kmer content
+// 3) get query,fileID queryfile
