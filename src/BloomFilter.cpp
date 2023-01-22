@@ -16,7 +16,7 @@ BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name="bits 
       if (file_<=0) cerr<<"can't open file "<<"./results/"+id+".dat"<<" to load BF on disk"<<endl;
       bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_READ, MAP_SHARED, file_, 0));
     }
-    if (rw =="W"){
+    else if (rw =="W"){
       file_ = open(("./results/"+id+".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
       if (file_<=0) cerr<<"can't open file "<<"./results/"+id+".dat"<<" to save BF on disk"<<endl;
       posix_fallocate(file_, 0, sz >> 3); // sz >> 3 shd be multiple of 4096

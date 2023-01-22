@@ -10,13 +10,14 @@
 #include <assert.h>
 #include <cstdlib>
 #include <dirent.h>
+#include <stdio.h>
 
 using namespace std;
 
 int main(int argc, char** argv) {
     const Config config = getConfigs(argv[1]);
     config.print();
-    uint32_t N = 5;
+    uint32_t N = 10;
     string filellistname = config.fastqFileName;
     uint64_t MAXRANGE = 8589934592; //2^33
     bool insert =0;
@@ -47,7 +48,7 @@ int main(int argc, char** argv) {
             vector<string> sequences = getFastqData("./data/fastqFiles/"+ fileName);
             range = config.rangefactor*config.k*sequences.size();
             ArBF_array[n] = new BloomFilter(range, config.k, config.disk, fileName.substr(0,fileName.length() - 6)+ " W");
-            cout<<fileName.c_str()<<" "<<sequences.size()<<endl;
+            printf("%s, #Inserts:%ld, BF size:%d", fileName.c_str(), sequences.size(), range);
             // # pragma omp parallel for 
             for (size_t i = 0; i < sequences.size(); ++i) {
                 uint64_t hashes[config.k];
@@ -94,7 +95,7 @@ int main(int argc, char** argv) {
             range = ranges[n];
             ArBF_array[n] = new BloomFilter(range, config.k, config.disk, fileName.substr(0,fileName.length() - 6)+ " R");
             n++;
-            cout<<fileName.c_str()<<endl;
+            cout<<fileName.substr(0,fileName.length() - 6)+ " R"<<endl;
         }
         // # pragma omp parallel for 
         for (size_t i = 0; i < nq; ++i) {
@@ -113,10 +114,12 @@ int main(int argc, char** argv) {
                         q_results[i].push_back(n);
                     }
                 }
+                cout<<"3"<<endl;
                 t3 = chrono::high_resolution_clock::now();
                 hashTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
                 bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
             }
+            cout<<"4"<<endl;
             fpc = (q_results[i].size()- GT[i].size());
             assert (fpc>=0);
             fpCount += fpc;
