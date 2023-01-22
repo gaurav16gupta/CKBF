@@ -42,7 +42,7 @@ string poison(int str_id, string s, int strength) {
 }
 
 int main(int argc, char** argv) {
-    const Config config = getConfigs(argv[1]);
+    const Config config = getConfigs(argv[1], argc - 2, argv + 2);
     config.print();
 
     vector<string> sequences = getFastqData("./data/fastqFiles/" + config.fastqFileName + ".fastq");
@@ -100,7 +100,10 @@ int main(int argc, char** argv) {
         fpCount += (fp ? 1 : 0);
     }
     cout << "Hash Time: " << hashTimeAccu << "; Query Time: " << bfTimeAccu << endl;
-    cout << "False Positive Rate: " << static_cast<float>(fpCount) / sequences.size() << endl;
+    float fpRate = static_cast<float>(fpCount) / sequences.size();
+    cout << "False Positive Rate: " << fpRate << endl;
+    fprintf(stderr, "%d / %d / %.2e\n", hashTimeAccu, bfTimeAccu, fpRate);
+
     bf.release();
     return 0;
 }

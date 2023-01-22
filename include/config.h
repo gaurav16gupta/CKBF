@@ -34,12 +34,20 @@ struct Config {
     }
 };
 
-Config getConfigs(string configFileName) {
+Config getConfigs(string configFileName, int numOverrides = 0, char ** overrideConfigs = nullptr) {
     ifstream configFile(configFileName);
     Config config;
 
     string line;
-    while(getline(configFile, line)) {
+    while (true) {
+        if (!getline(configFile, line)) {
+            if (numOverrides > 0) {
+                line = string(overrideConfigs[--numOverrides]);
+            } else {
+                break;
+            }
+        }
+
         size_t equalPos = line.find('=');
         string key = line.substr(0, equalPos);
         string value = line.substr(equalPos + 1);

@@ -462,7 +462,7 @@ void MurmurHash3_x64_64 ( const void * key, const int len,
   h1 += h2;
   h2 += h1;
 
-  *(uint64_t*)out = h1;
+  *(uint64_t*)out = h2;
 }
 
 //-----------------------------------------------------------------------------
@@ -542,7 +542,7 @@ void MurmurHash3_x64_64 ( const void * key, const int len,
   h1 += h2;
   h2 += h1;
 
-  *(uint64_t*)out = h1 % range;
+  *(uint64_t*)out = h2 % range;
 }
 
 //-----------------------------------------------------------------------------
