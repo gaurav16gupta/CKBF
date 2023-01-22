@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
         getQueryforArBF(queryFile, queries, GT, N);
 
         vector<vector<uint32_t>> q_results(nq);
-        uint32_t fpCount,fpc = 0;
+        uint32_t fpCount=0,fpc = 0;
         uint32_t hashTimeAccu = 0, bfTimeAccu = 0;
         chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
 
@@ -102,30 +102,27 @@ int main(int argc, char** argv) {
             uint32_t threadId = 0; // omp_get_thread_num();
             uint64_t hashes[config.k];
             hasher[threadId]->setSequence(queries[i]);
-            while (hasher[threadId]->hasNext()) {
-                t1 = chrono::high_resolution_clock::now();
-                hasher[threadId]->hash(hashes);
-                t2 = chrono::high_resolution_clock::now();
-                for (size_t n = 0; n < N; ++n){
+            for (size_t n = 0; n < N; ++n){
+                bool fp = true;
+                while (hasher[threadId]->hasNext()) {
+                    t1 = chrono::high_resolution_clock::now();
+                    hasher[threadId]->hash(hashes);
                     for (uint8_t k = 0; k < config.k; ++k){
-                            hashes[k] = hashes[k]%ranges[n];
+                        hashes[k] = hashes[k]%ranges[n];
                     }
-                    if (ArBF_array[n]->test(hashes)){
-                        q_results[i].push_back(n);
-                    }
+                    t2 = chrono::high_resolution_clock::now();
+                    fp = fp && ArBF_array[n]->test(hashes);
+                    t3 = chrono::high_resolution_clock::now();
+                    hashTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
+                    bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
                 }
-                cout<<"3"<<endl;
-                t3 = chrono::high_resolution_clock::now();
-                hashTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
-                bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
+                if (fp) q_results[i].push_back(n);  
             }
-            cout<<"4"<<endl;
             fpc = (q_results[i].size()- GT[i].size());
             assert (fpc>=0);
             fpCount += fpc;
         }
         fpCount = fpCount/nq;
-
         cout << "Hash Time: " << hashTimeAccu << "; Read Time: " << bfTimeAccu << endl;
         cout << "Average False Positive Rate: " << static_cast<float>(fpCount) / N << endl;
     }
@@ -134,3 +131,4 @@ int main(int argc, char** argv) {
 
 //todo: 
 // 1) choice of ABF experiment in RAM, use disk flag (if 0) to save and load BF arrays n RAM 
+// 2) stop when first kmer gives False, or calculate the %  kmer content
