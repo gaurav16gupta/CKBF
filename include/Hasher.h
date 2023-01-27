@@ -23,6 +23,10 @@ public:
         return pos <= sequence_len - 31;
     }
 
+    uint32_t nHashesInSequence() {
+        return sequence_len - 30;
+    }
+
     virtual void hash(uint64_t * out) = 0;
 
     void setSequence(const string & _sequence) {

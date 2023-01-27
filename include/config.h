@@ -22,6 +22,8 @@ struct Config {
     uint32_t hashType;
     uint32_t kMer = 0;
     uint32_t poison = 0;
+    uint32_t firstNFiles = 200;
+    bool queryOnly = false;
     bool disk = false;
     float rangefactor=1;
 
@@ -30,7 +32,8 @@ struct Config {
         << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads 
         << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" 
         << seed << "; hashType=" << (hashType == MURMUR_HASH ? "murmur" : (hashType == FUZZY_HASH ? "fuzzy" : "brute_force_fuzzy")) << "; poison=" << poison 
-        << "; disk=" << (disk ? "yes" : "no") << endl;
+        << "; disk=" << (disk ? "yes" : "no") << "; rangefactor=" << rangefactor
+        << "; first_n_files=" << firstNFiles << "; query_only=" << (queryOnly ? "yes" : "no") << endl;
     }
 };
 
@@ -83,6 +86,10 @@ Config getConfigs(string configFileName, int numOverrides = 0, char ** overrideC
             config.disk = stoul(value) > 0;
         } else if (key == "rangefactor") {
             config.rangefactor = stoul(value);
+        } else if (key == "first_n_files") {
+            config.firstNFiles = stoul(value);
+        } else if (key == "query_only") {
+            config.queryOnly = stoul(value) > 0;
         } else {
             cerr << key << " is an unrecognized config key" << endl;
         }

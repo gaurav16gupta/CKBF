@@ -45,6 +45,15 @@ bool BloomFilter::test(uint64_t *hashes) {
   return result;
 }
 
+bool BloomFilter::test(uint64_t *hashes, uint64_t mod) {
+  // TODO: compare with using if; hardcode for loop
+  bool result = true;
+  for (uint32_t i = 0; i < k; ++i) {
+    result = result && bits[(hashes[i] % mod) >> 3] & (1 << ((hashes[i] % mod) & 7));
+  }
+  return result;
+}
+
 void BloomFilter::release() {
   munmap (bits, size >> 3);
 }
