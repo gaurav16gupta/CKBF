@@ -14,6 +14,8 @@
 using namespace std;
 
 char rep(char x) {
+    return 'X';
+    // Make a sure shot false positive
     switch(x) {
         case 'A':
             return 'C';
@@ -36,7 +38,7 @@ string poison(int str_id, string s, int strength) {
     int temp;
     for(int i=0; i < strength; i++) {
         temp = rand()%s.length();
-        s[temp] = rep(temp);
+        s[temp] = rep(s[temp]);
     }
     return s;
 }
@@ -52,11 +54,23 @@ int main(int argc, char** argv) {
     assert(config.numThreads == 1);
     Hasher *hasher[config.numThreads]; // each thread gets its own hasher
     for (uint32_t i = 0; i < config.numThreads; ++i) {
-        hasher[i] = config.hashType == Config::MURMUR_HASH
-        ? static_cast<Hasher*>(new MurmurHasher(config.range, config.k, config.seed))
-        : (config.hashType == Config::BRUTE_FORCE_FUZZY_HASH
-            ? static_cast<Hasher*>(new FuzzyHasher(config.range, config.k, config.kMer, config.universalHashRange, config.seed))
-            : static_cast<Hasher*>(new EfficientFuzzyHasher(config.range, config.k, config.kMer, config.universalHashRange, config.seed)));
+        switch(config.hashType) {
+            case Config::MURMUR_HASH:
+                hasher[i] = static_cast<Hasher*>(new MurmurHasher(config.range, config.k, config.seed));
+                break;
+            case Config::BRUTE_FORCE_FUZZY_HASH:
+                hasher[i] = static_cast<Hasher*>(new FuzzyHasher(config.range, config.k, config.kMer, config.universalHashRange, config.seed));
+                break;
+            case Config::FUZZY_HASH:
+                hasher[i] = static_cast<Hasher*>(new EfficientFuzzyHasher(config.range, config.k, config.kMer, config.universalHashRange, config.seed));
+                break;
+            case Config::FUZZY_HASH_EXP:
+                hasher[i] = static_cast<Hasher*>(new EfficientFuzzyHasherEXP(config.range, config.k, config.kMer, config.universalHashRange, config.seed));
+                break;
+            default:
+                cout << "HASH TYPE not recognized" << endl;
+                return 0;
+        }
     }
     uint32_t hashTimeAccu = 0, bfTimeAccu = 0;
     chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;

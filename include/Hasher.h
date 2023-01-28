@@ -4,7 +4,8 @@
 #include <iostream>
 #include <string>
 #include "MurmurHash3.h"
-
+#include <assert.h>
+#include <cmath>
 using namespace std;
 
 class Hasher {
@@ -123,6 +124,92 @@ static uint32_t next_pow_of_2(uint32_t x) {
     return power;
 }
 
+class EfficientFuzzyHasherEXP : public Hasher {
+protected:
+    const uint32_t kMer;
+    const uint32_t universalHashRange;
+    uint32_t tree_length;
+    uint64_t *trees;
+    uint32_t index_to_pop;
+    uint64_t* oneperm_hash_helper_arr = new uint64_t [33];
+    int32_t Lbits;
+public:
+    EfficientFuzzyHasherEXP(uint64_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
+        : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange),
+          tree_length(next_pow_of_2(32 - kMer) * 2 - 1), trees(new uint64_t[tree_length * num_hashes]), index_to_pop(0) {
+        fill(trees, trees + tree_length * num_hashes, UINT64_MAX);
+        Lbits = (int)std::log2((float) universalHashRange);
+        std::cout << "Lbits: " << Lbits << "urange: " << universalHashRange << std::flush << std::endl;
+        assert(num_hashes*Lbits <= 64);
+    }
+
+    void buildTrees() {
+        uint32_t idx1;
+        for (uint32_t i = 0; i < num_hashes; ++i) {
+            idx1 = tree_length * i;
+            for (int32_t j = tree_length / 2 - 1; j >= 0; --j) {
+                trees[idx1 + j] = min(
+                    trees[idx1 + j * 2 + 1],
+                    trees[idx1 + j * 2 + 2]
+                );
+            }
+        }
+    }
+
+    void hash(uint64_t * out) override {
+        uint64_t hashValue, minValue, uhashvalue;
+        uint32_t i, j, new_index;
+        uint32_t idx1;
+        //uint32_t seed1;
+        uint64_t one_perm_shift = UINT64_MAX / num_hashes;
+        uint64_t MASK = ((1LL<<Lbits) - 1);
+        MurmurHash3_x64_64(sequence + pos, 31, seed, &uhashvalue);
+        if (pos == 0) {
+            // initial tree construction
+            for (j=0; j<=32 - kMer; ++j) {
+                MurmurHash3_x64_64(sequence + pos + j, kMer, seed, &oneperm_hash_helper_arr[j]);
+            }
+
+            for (i = 0; i < num_hashes; ++i) {
+                minValue = UINT64_MAX;
+                idx1 = tree_length * i + tree_length / 2;
+                //seed1 = seed + i;
+                for (j = 0; j <= 31 - kMer; ++j) {
+                    hashValue = oneperm_hash_helper_arr[j] - i*one_perm_shift;
+                    minValue = min(hashValue, minValue);
+                    trees[idx1 + j] = hashValue;
+                }
+                //MurmurHash3_x64_64(sequence + pos, 31, seed1, out + i, universalHashRange);
+                out[i] = (uhashvalue >> (i*Lbits)) & MASK;
+                out[i] += minValue % (range - universalHashRange);
+            }
+            buildTrees();
+            index_to_pop = 0;
+        } else {
+            MurmurHash3_x64_64(sequence + pos + 31 - kMer, kMer, seed, &oneperm_hash_helper_arr[0]);
+            for (i = 0; i < num_hashes; ++i) {
+                hashValue = (oneperm_hash_helper_arr[0] -i*one_perm_shift);
+                new_index = tree_length / 2 + index_to_pop;
+                //seed1 = seed + i;
+                idx1 = tree_length * i;
+                trees[idx1 + new_index] = hashValue;
+                while (new_index > 0) {
+                    new_index = (new_index - 1) / 2;
+                    trees[idx1 + new_index] = min(
+                        trees[idx1 + new_index * 2 + 1],
+                        trees[idx1 + new_index * 2 + 2]
+                    );
+                }
+                //MurmurHash3_x64_64(sequence + pos, 31, seed1, out + i, universalHashRange);
+                out[i] = (uhashvalue >> (i*10)) & MASK;
+                out[i] += trees[idx1] % (range - universalHashRange);
+            }
+            index_to_pop = (index_to_pop + 1) % (32 - kMer);
+        }
+        pos += 1;
+    }
+};
+
 class EfficientFuzzyHasher : public Hasher {
 protected:
     const uint32_t kMer;
@@ -193,71 +280,5 @@ public:
     }
 
 };
-
-// class EfficientOnePermFuzzyHasher : public Hasher {
-// protected:
-//     const uint32_t kMer;
-//     const uint32_t universalHashRange;
-//     const uint32_t minHashRange;
-//     uint32_t *trees;
-//     uint32_t index_to_pop;
-// public:
-//     EfficientOnePermFuzzyHasher(uint32_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
-//         : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange), minHashRange(range), trees(new uint32_t[((32 - kMer) * 2 - 1) * num_hashes]), index_to_pop(0) {
-//         fill(trees, trees + ((32 - kMer) * 2 - 1) * num_hashes, UINT32_MAX);
-//     }
-
-//     void buildTrees() {
-//         uint32_t idx1;
-//         for (uint32_t i = 0; i < num_hashes; ++i) {
-//             idx1 = ((32 - kMer) * 2 - 1) * i ;
-//             for (int32_t j = kMer - 2; j >= 0; --j) {
-//                 trees[idx1 + j] = min(
-//                     trees[idx1 + j * 2 + 1],
-//                     trees[idx1 + j * 2 + 2]
-//                 );
-//             }
-//         }
-//     }
-
-//     void hash(uint32_t * out) {
-//         uint32_t hashValue, i,j, new_index, idx1, this_hashvalue;
-//         uint32_t stride = UINT32_MAX / num_hashes;
-//         if (pos == 0) {
-//             idx1 = ((32 - kMer) * 2 - 1);
-//             for(j=0; j<=31-kMer; ++j) {
-//                 MurmurHash3_x86_32(sequence + pos + j, kMer, seed, &hashValue);
-//                 for (i=0; i<=num_hashes; ++i) {
-//                     this_hashvalue = hashValue - i*stride; // this is shifting and taking mod with 2^32
-//                     trees[idx1 * i +  (kMer - 1) +  j] = this_hashvalue;
-//                 }
-//             }
-//             buildTrees();
-//             for(i=0;i<=num_hashes;++i) {
-//                 MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
-//                 out[i] += trees[idx1*i] % (minHashRange - universalHashRange);
-//             }
-//         } else {
-//             MurmurHash3_x86_32(sequence + pos + 31 - kMer, kMer, seed, &hashValue);
-//             for (i = 0; i < num_hashes; ++i) {
-//                 this_hashvalue = hashValue - i*stride; // this is shifting and taking mod with 2^32
-//                 new_index = kMer - 1 + index_to_pop;
-//                 idx1 = ((32 - kMer) * 2 - 1) * i;
-//                 trees[idx1 + new_index] = this_hashvalue;
-//                 while (new_index > 0) {
-//                     new_index = (new_index - 1) / 2;
-//                     trees[idx1 + new_index] = min(
-//                         trees[idx1 + new_index * 2 + 1],
-//                         trees[idx1 + new_index * 2 + 2]
-//                     );
-//                 }
-//                 MurmurHash3_x86_32(sequence + pos, 31, seed + i, out + i, universalHashRange);
-//                 out[i] += trees[((32 - kMer) * 2 - 1) * i] % (minHashRange - universalHashRange);
-//             }
-//             index_to_pop = (index_to_pop + 1) % (32 - kMer);
-//         }
-//         pos += 1;
-//     }
-// };
 
 #endif

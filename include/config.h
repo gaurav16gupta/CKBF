@@ -8,9 +8,21 @@
 using namespace std;
 
 struct Config {
-    static const uint32_t MURMUR_HASH = 0;
-    static const uint32_t FUZZY_HASH = 1;
-    static const uint32_t BRUTE_FORCE_FUZZY_HASH = 2;
+    string hashtypeStr[5]  = {
+      "MURMUR_HASH",
+      "FUZZY_HASH",
+      "BRUTE_FORCE_FUZZY_HASH",
+      "FUZZY_HASH_EXP",
+      "MAX_HASH_TYPE"
+    };
+
+    enum HASHTYPE{
+      MURMUR_HASH = 0,
+      FUZZY_HASH = 1,
+      BRUTE_FORCE_FUZZY_HASH = 2,
+      FUZZY_HASH_EXP= 3,
+      MAX_HASH_TYPE = 4
+    };
 
     string fastqFileName;
     string queryFileName;
@@ -19,7 +31,7 @@ struct Config {
     uint32_t numThreads;
     uint32_t universalHashRange = 0;
     uint32_t seed;
-    uint32_t hashType;
+    HASHTYPE hashType = MAX_HASH_TYPE;
     uint32_t kMer = 0;
     uint32_t poison = 0;
     uint32_t firstNFiles = 200;
@@ -31,7 +43,7 @@ struct Config {
         cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName 
         << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads 
         << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" 
-        << seed << "; hashType=" << (hashType == MURMUR_HASH ? "murmur" : (hashType == FUZZY_HASH ? "fuzzy" : "brute_force_fuzzy")) << "; poison=" << poison 
+        << seed << "; hashType=" << hashtypeStr[hashType] << "; poison=" << poison 
         << "; disk=" << (disk ? "yes" : "no") << "; rangefactor=" << rangefactor
         << "; first_n_files=" << firstNFiles << "; query_only=" << (queryOnly ? "yes" : "no") << endl;
     }
@@ -73,12 +85,15 @@ Config getConfigs(string configFileName, int numOverrides = 0, char ** overrideC
         } else if (key == "hash") {
             if (value == "murmur") {
                 config.hashType = Config::MURMUR_HASH;
+            } else if (value == "fuzzyexp") {
+                config.hashType = Config::FUZZY_HASH_EXP;
             } else if (value == "fuzzy") {
                 config.hashType = Config::FUZZY_HASH;
             } else if (value == "brute_force_fuzzy") {
                 config.hashType = Config::BRUTE_FORCE_FUZZY_HASH;
             } else {
                 cerr << value << " is an unrecognized hash type" << endl;
+                config.hashType = Config::MAX_HASH_TYPE;
             }
         } else if (key == "poison") {
             config.poison = stoul(value);
