@@ -6,7 +6,7 @@
 
 class BloomFilter{
 public:
-    BloomFilter(uint64_t sz, uint32_t k_, bool disk, std::string name);
+    BloomFilter(uint64_t sz, uint32_t k_, bool disk, bool readOnly, std::string filePath);
     void insert(uint64_t *hashes);
     bool test(uint64_t *hashes);
     bool test(uint64_t *hashes, uint64_t mod);

@@ -37,6 +37,14 @@ vector<string> getQueryData(string fileName) {
     return lines;
 }
 
+void getQueryForArBF(string queryFileName, vector<string> &queries) {
+    ifstream queryFile(queryFileName);
+    string line;
+    while (getline(queryFile, line) && line.size() > 0) {
+        queries.push_back(line);
+    }
+}
+
 void getQueryforArBF(string queryFilename, vector<string>& queries, vector<vector<uint32_t>>& GT, uint32_t N) {
     ifstream queryFile(queryFilename);
     string line;
@@ -60,10 +68,10 @@ void getQueryforArBF(string queryFilename, vector<string>& queries, vector<vecto
 
 // Vector reader
 // template<typename T>
-vector<uint32_t> read_vector(const std::string& filename) {
+vector<uint64_t> read_vector(const std::string& filename) {
     std::ifstream file(filename);
-    std::vector<uint32_t> result;
-    uint32_t value;
+    std::vector<uint64_t> result;
+    uint64_t value;
     while (file >> value) {
         result.push_back(value);
     }
@@ -71,7 +79,7 @@ vector<uint32_t> read_vector(const std::string& filename) {
 }
 
 // Vector writer 
-void write_vector(const std::string& filename, const std::vector<uint32_t>& vector) { 
+void write_vector(const std::string& filename, const std::vector<uint64_t>& vector) { 
     std::ofstream file(filename); 
     for (const auto& element : vector) { 
         file << element << " "; 

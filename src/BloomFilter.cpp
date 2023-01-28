@@ -5,30 +5,28 @@
 
 using namespace std;
 
-BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name="bits W")
+BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, bool readOnly, string filePath)
   : size(sz), k(k_) {
   if (disk) {
-    string id, rw;
-    stringstream s(name);
-    s>>id>>rw;
-    if (rw =="R"){
-      int file_ = open(("./results/"+id+".dat").c_str(), O_RDONLY, 0);
-      if (file_<=0) cerr<<"can't open file "<<"./results/"+id+".dat"<<" to load BF on disk"<<endl;
+    if (readOnly) {
+      file_ = open(filePath.c_str(), O_RDONLY, 0);
+      if (file_<=0) cerr<<"can't open file "<<filePath<<" to load BF on disk"<<endl;
       bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_READ, MAP_SHARED, file_, 0));
-    }
-    else if (rw =="W"){
-      file_ = open(("./results/"+id+".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
-      if (file_<=0) cerr<<"can't open file "<<"./results/"+id+".dat"<<" to save BF on disk"<<endl;
+    } else {
+      file_ = open(filePath.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
+      if (file_<=0) cerr<<"can't open file "<<filePath<<" to save BF on disk"<<endl;
       posix_fallocate(file_, 0, sz >> 3); // sz >> 3 shd be multiple of 4096
       bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_WRITE, MAP_SHARED, file_, 0));
     }
-    else{cerr<<"Yo! Mention R/W after Bloom filter file name and a space"<<endl;}  
   } else {
     bits = new uint8_t[sz >> 3];
   }
-  // initialize the bits to 0
-  for (uint32_t i=0 ; i <  (sz>>3) ; i ++) {
-    bits[i] = 0;
+
+  if (!readOnly) {
+    // initialize the bits to 0
+    for (uint32_t i=0 ; i <  (sz>>3) ; i ++) {
+      bits[i] = 0;
+    }
   }
 }
 

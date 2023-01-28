@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 
     vector<string> sequences = getFastqData("./data/fastqFiles/" + config.fastqFileName + ".fastq");
     // vector<string> querySequences = getQueryData("../data/" + config.queryFileName);
-    BloomFilter bf(config.range, config.k, config.disk, config.fastqFileName+ " W");
+    BloomFilter bf(config.range, config.k, config.disk, false, "./results/" + config.fastqFileName + ".dat");
     // omp_set_num_threads(config.numThreads);
     assert(config.numThreads == 1);
     Hasher *hasher[config.numThreads]; // each thread gets its own hasher

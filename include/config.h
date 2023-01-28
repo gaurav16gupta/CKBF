@@ -26,6 +26,7 @@ struct Config {
 
     string fastqFileName;
     string queryFileName;
+    string experimentDir;
     uint64_t range;
     uint32_t k; // number of hashes
     uint32_t numThreads;
@@ -37,10 +38,11 @@ struct Config {
     uint32_t firstNFiles = 200;
     bool queryOnly = false;
     bool disk = false;
-    float rangefactor=1;
+    uint32_t rangefactor=1;
 
-    void print() const {
-        cout << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName 
+    void print(ostream & ost=cout) const {
+        ost << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName 
+        << "; experimentDir=" << experimentDir
         << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads 
         << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" 
         << seed << "; hashType=" << hashtypeStr[hashType] << "; poison=" << poison 
@@ -70,6 +72,8 @@ Config getConfigs(string configFileName, int numOverrides = 0, char ** overrideC
             config.fastqFileName = value;
         } else if (key == "query_file_name") {
             config.queryFileName = value;
+        } else if (key == "exp_dir") {
+            config.experimentDir = value;
         } else if (key == "range") {
             config.range = stoul(value);
         } else if (key == "k") {
