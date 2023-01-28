@@ -26,6 +26,10 @@ BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name="bits 
   } else {
     bits = new uint8_t[sz >> 3];
   }
+  // initialize the bits to 0
+  for (uint32_t i=0 ; i <  (sz>>3) ; i ++) {
+    bits[i] = 0;
+  }
 }
 
 
