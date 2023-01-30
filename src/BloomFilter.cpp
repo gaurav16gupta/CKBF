@@ -24,7 +24,7 @@ BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, bool readOnly, str
 
   if (!readOnly) {
     // initialize the bits to 0
-    for (uint32_t i=0 ; i <  (sz>>3) ; i ++) {
+    for (uint64_t i = 0; i < (sz>>3); ++i) {
       bits[i] = 0;
     }
   }

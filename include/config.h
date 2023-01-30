@@ -38,15 +38,16 @@ struct Config {
     uint32_t firstNFiles = 200;
     bool queryOnly = false;
     bool disk = false;
-    uint32_t rangefactor=1;
+    double rangefactor = 1;
+    double fpr = 0.001;
 
     void print(ostream & ost=cout) const {
-        ost << "configs: fastqFileName=" << fastqFileName << "; queryFileName=" << queryFileName 
-        << "; experimentDir=" << experimentDir
-        << "; range=" << range << "; k=" << k << "; numThreads=" << numThreads 
-        << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" 
-        << seed << "; hashType=" << hashtypeStr[hashType] << "; poison=" << poison 
-        << "; disk=" << (disk ? "yes" : "no") << "; rangefactor=" << rangefactor
+        ost << "configs: fastq_file_name=" << fastqFileName << "; query_file_name=" << queryFileName 
+        << "; exp_dir=" << experimentDir
+        << "; range=" << range << "; k=" << k << "; num_threads=" << numThreads 
+        << "; universal_hash_range=" << universalHashRange << "; kmer=" << kMer << "; seed=" 
+        << seed << "; hash=" << hashtypeStr[hashType] << "; poison=" << poison 
+        << "; disk=" << (disk ? "yes" : "no") << "; rangefactor=" << rangefactor << "; fpr=" << fpr
         << "; first_n_files=" << firstNFiles << "; query_only=" << (queryOnly ? "yes" : "no") << endl;
     }
 };
@@ -104,7 +105,9 @@ Config getConfigs(string configFileName, int numOverrides = 0, char ** overrideC
         } else if (key == "disk") {
             config.disk = stoul(value) > 0;
         } else if (key == "rangefactor") {
-            config.rangefactor = stoul(value);
+            config.rangefactor = stod(value);
+        } else if (key == "fpr") {
+            config.fpr = stod(value);
         } else if (key == "first_n_files") {
             config.firstNFiles = stoul(value);
         } else if (key == "query_only") {

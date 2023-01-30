@@ -11,12 +11,17 @@
 #include <cstdlib>
 #include <dirent.h>
 #include <stdio.h>
+#include <filesystem>
 
 using namespace std;
 
 int main(int argc, char** argv) {
     const Config config = getConfigs(argv[1], argc - 2, argv + 2);
     config.print();
+
+    if (!filesystem::exists(config.experimentDir)) {
+        filesystem::create_directory(config.experimentDir);
+    }
 
     ofstream results(config.experimentDir + "/results.txt", ofstream::trunc);
     config.print(results);
@@ -50,19 +55,26 @@ int main(int argc, char** argv) {
     BloomFilter** ArBF_array;
     uint32_t numFiles = config.firstNFiles;
     ArBF_array = new BloomFilter*[numFiles]; //array of pointers
+    vector<pair<uint32_t, uint32_t>> fileStats(numFiles, make_pair(0, 0));
     vector<uint64_t> ranges;
     uint64_t range;
 
-    string fileName;
+    vector<string> fileNames(numFiles);
 
     if (insert) {
         uint32_t n = 0, hashTimeAccu = 0, bfTimeAccu = 0, counter = 0;
         chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
         ifstream filellist(filellistname);
-        while (n < numFiles && getline(filellist, fileName)) {
-            vector<string> sequences = getFastqData("/scratch1/gg29/CKBF/data/fastqFiles/" + fileName);
-            range = static_cast<uint64_t>(config.rangefactor) * static_cast<uint64_t>(config.k) * static_cast<uint64_t>(sequences.size());
-            ArBF_array[n] = new BloomFilter(range, config.k, config.disk, false, config.experimentDir + '/' + fileName.substr(0,fileName.length() - 6) + ".dat");
+        while (n < numFiles && getline(filellist, fileNames[n])) {
+            vector<string> sequences = getFastqData("/scratch1/gg29/CKBF/data/fastqFiles/" + fileNames[n]);
+            uint64_t numInserts = 0;
+            for (size_t s = 0; s < sequences.size(); ++s) {
+                numInserts += sequences[s].size() - 30;
+            }
+            range = static_cast<uint64_t>(-config.rangefactor * numInserts * config.k / log(1 - pow(config.fpr, 1.0 / config.k)));
+            // range = static_cast<uint64_t>(config.rangefactor * config.k * numInserts);
+            // range = static_cast<uint64_t>(config.rangefactor) * static_cast<uint64_t>(config.k) * static_cast<uint64_t>(sequences.size());
+            ArBF_array[n] = new BloomFilter(range, config.k, config.disk, false, config.experimentDir + '/' + fileNames[n].substr(0, fileNames[n].length() - 6) + ".dat");
             uint32_t hashTime = 0, bfTime = 0;
             // # pragma omp parallel for 
             for (size_t i = 0; i < sequences.size(); ++i) {
@@ -82,11 +94,14 @@ int main(int argc, char** argv) {
                     bfTime += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
                     counter += 1;
                 }
+                if (100 * (i-1) / sequences.size() != 100 * i / sequences.size()) {
+                    cout << '#' << flush;
+                }
             }
-            cout << "BF #" << n << " packing: " << ArBF_array[n]->count() << '/' << ArBF_array[n]->size
+            cout << "\nBF #" << n << ' ' << fileNames[n] << " Packing: " << ArBF_array[n]->count() << '/' << ArBF_array[n]->size
                 << "; # of inserts: " << counter << "; Hash Time: " << hashTime
                 << "; BF Insert Time: " << bfTime << endl;
-            results << "BF #" << n << " packing: " << ArBF_array[n]->count() << '/' << ArBF_array[n]->size
+            results << "BF #" << n << ' ' << fileNames[n] << " Packing: " << ArBF_array[n]->count() << '/' << ArBF_array[n]->size
                 << "; # of inserts: " << counter << "; Hash Time: " << hashTime
                 << "; BF Insert Time: " << bfTime << endl;
 
@@ -117,9 +132,9 @@ int main(int argc, char** argv) {
 
         ranges = read_vector(config.experimentDir + "/ranges.txt");
         ifstream filellist(filellistname);
-        while (n < numFiles && getline(filellist, fileName)) {
+        while (n < numFiles && getline(filellist, fileNames[n])) {
             range = ranges[n];
-            ArBF_array[n] = new BloomFilter(range, config.k, config.disk, true, config.experimentDir + '/' + fileName.substr(0,fileName.length() - 6) + ".dat");
+            ArBF_array[n] = new BloomFilter(range, config.k, config.disk, true, config.experimentDir + '/' + fileNames[n].substr(0,fileNames[n].length() - 6) + ".dat");
             n++;
         }
         uint32_t nPositives = 0;
@@ -144,23 +159,28 @@ int main(int argc, char** argv) {
                 bool positive = true;
                 t1 = chrono::high_resolution_clock::now();
                 for (uint32_t l = 0; l < nHashes; ++l) {
-                    positive = positive && ArBF_array[n]->test(hashes, ranges[n]);
+                    positive = positive && ArBF_array[n]->test(hashes + l * config.k, ranges[n]);
                 }
                 t2 = chrono::high_resolution_clock::now();
-                bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
+                uint32_t duration = chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
+                fileStats[n].first += duration;
+                bfTimeAccu += duration;
                 if (positive) {
                     results << ',' << n;
+                    fileStats[n].second += 1;
                     nPositives += 1;
                 }
             }
             results << endl;
         }
-        cout << "Query Hash Time: " << hashTimeAccu << "; BF Lookup Time: " << bfTimeAccu << "; # of positives: " << nPositives << '/' << nq * numFiles << endl;
-        results << "Query Hash Time: " << hashTimeAccu << "; BF Lookup Time: " << bfTimeAccu << "; # of positives: " << nPositives << '/' << nq * numFiles << endl;
 
         for (uint32_t i = 0; i < numFiles; ++i) {
+            results << "BF #" << i << ' ' << fileNames[i] << " Lookup Time: " << fileStats[i].first << "; # of positives: " << fileStats[i].second << endl;
             ArBF_array[i]->release();
         }
+
+        cout << "Query Hash Time: " << hashTimeAccu << "; BF Lookup Time: " << bfTimeAccu << "; # of positives: " << nPositives << '/' << nq * numFiles << endl;
+        results << "Query Hash Time: " << hashTimeAccu << "; BF Lookup Time: " << bfTimeAccu << "; # of positives: " << nPositives << '/' << nq * numFiles << endl;
     }
     return 0;
 }
