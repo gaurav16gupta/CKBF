@@ -16,9 +16,14 @@ protected:
     const uint32_t num_hashes;
     const uint32_t seed;
     uint32_t pos;
+    uint64_t RANGEMASK;
 public:
     Hasher(uint64_t range, uint32_t num_hashes, uint32_t seed=0)
-        : range(range), num_hashes(num_hashes), seed(seed), pos(0) {}
+        : range(range), num_hashes(num_hashes), seed(seed), pos(0) {
+
+        uint64_t Rbits = (int)std::log2((float) range);
+        RANGEMASK = (1LL<<Rbits) -1;
+    }
 
     inline bool hasNext() {
         return pos <= sequence_len - 31;
@@ -44,7 +49,8 @@ public:
 
     void hash(uint64_t * out) override {
         for (uint32_t j = 0; j < num_hashes; ++j) {
-            MurmurHash3_x64_64(sequence + pos, 31, seed + j, out + j, range);
+            MurmurHash3_x64_64(sequence + pos, 31, seed + j, out + j);
+            out[j] = out[j]  & RANGEMASK;
         }
         pos += 1;
     }
@@ -82,9 +88,12 @@ class FuzzyHasher : public Hasher {
 protected:
     const uint32_t kMer;
     const uint32_t universalHashRange;
+    uint64_t URANGEMASK;
 public:
     FuzzyHasher(uint64_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
         : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange) {
+        uint64_t Lbits = (int)std::log2((float) universalHashRange);
+        URANGEMASK = (1LL<<Lbits) -1;
     }
 
     void hash(uint64_t * out) override {
@@ -95,9 +104,10 @@ public:
                 MurmurHash3_x64_64(sequence + pos + j, kMer, seed + i, &hashValue);
                 minValue = min(hashValue, minValue);
             }
-            MurmurHash3_x64_64(sequence + pos, 31, seed + i, out + i, universalHashRange);
+            MurmurHash3_x64_64(sequence + pos, 31, seed + i, out + i);
+            out[i] = out[i]  & URANGEMASK;
             // offset with min hash. overall uh + mh
-            out[i] += minValue % (range - universalHashRange); 
+            out[i] += minValue & RANGEMASK; 
         }
         pos += 1;
     }
@@ -133,12 +143,14 @@ protected:
     uint32_t index_to_pop;
     uint64_t* oneperm_hash_helper_arr = new uint64_t [33];
     int32_t Lbits;
+    uint64_t URANGEMASK;
 public:
     EfficientFuzzyHasherEXP(uint64_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
         : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange),
           tree_length(next_pow_of_2(32 - kMer) * 2 - 1), trees(new uint64_t[tree_length * num_hashes]), index_to_pop(0) {
         fill(trees, trees + tree_length * num_hashes, UINT64_MAX);
         Lbits = (int)std::log2((float) universalHashRange);
+        URANGEMASK = (1LL<<Lbits) -1;
         std::cout << "Lbits: " << Lbits << "urange: " << universalHashRange << std::flush << std::endl;
         assert(num_hashes*Lbits <= 64);
     }
@@ -162,7 +174,6 @@ public:
         uint32_t idx1;
         //uint32_t seed1;
         uint64_t one_perm_shift = UINT64_MAX / num_hashes;
-        uint64_t MASK = ((1LL<<Lbits) - 1);
         MurmurHash3_x64_64(sequence + pos, 31, seed, &uhashvalue);
         if (pos == 0) {
             // initial tree construction
@@ -180,8 +191,8 @@ public:
                     trees[idx1 + j] = hashValue;
                 }
                 //MurmurHash3_x64_64(sequence + pos, 31, seed1, out + i, universalHashRange);
-                out[i] = (uhashvalue >> (i*Lbits)) & MASK;
-                out[i] += minValue % (range - universalHashRange);
+                out[i] = (uhashvalue >> (i*Lbits)) & URANGEMASK;
+                out[i] += minValue & RANGEMASK;
             }
             buildTrees();
             index_to_pop = 0;
@@ -201,8 +212,8 @@ public:
                     );
                 }
                 //MurmurHash3_x64_64(sequence + pos, 31, seed1, out + i, universalHashRange);
-                out[i] = (uhashvalue >> (i*10)) & MASK;
-                out[i] += trees[idx1] % (range - universalHashRange);
+                out[i] = (uhashvalue >> (i*10)) & URANGEMASK;
+                out[i] += trees[idx1] & RANGEMASK;
             }
             index_to_pop = (index_to_pop + 1) % (32 - kMer);
         }
@@ -217,11 +228,14 @@ protected:
     uint32_t tree_length;
     uint64_t *trees;
     uint32_t index_to_pop;
+    uint64_t URANGEMASK;
 public:
     EfficientFuzzyHasher(uint64_t range, uint32_t num_hashes, uint32_t kMer, uint32_t universalHashRange, uint32_t seed=0)
         : Hasher(range, num_hashes, seed), kMer(kMer), universalHashRange(universalHashRange),
           tree_length(next_pow_of_2(32 - kMer) * 2 - 1), trees(new uint64_t[tree_length * num_hashes]), index_to_pop(0) {
         fill(trees, trees + tree_length * num_hashes, UINT64_MAX);
+        uint64_t Lbits = (int)std::log2((float) universalHashRange);
+        URANGEMASK = (1LL<<Lbits) -1;
     }
 
     void buildTrees() {
@@ -252,8 +266,9 @@ public:
                     minValue = min(hashValue, minValue);
                     trees[idx1 + j] = hashValue;
                 }
-                MurmurHash3_x64_64(sequence + pos, 31, seed1, out + i, universalHashRange);
-                out[i] += minValue % (range - universalHashRange);
+                MurmurHash3_x64_64(sequence + pos, 31, seed1, out + i);
+                out[i] = out[i] & URANGEMASK;
+                out[i] += minValue & RANGEMASK;
             }
             buildTrees();
             index_to_pop = 0;
@@ -271,8 +286,9 @@ public:
                         trees[idx1 + new_index * 2 + 2]
                     );
                 }
-                MurmurHash3_x64_64(sequence + pos, 31, seed1, out + i, universalHashRange);
-                out[i] += trees[idx1] % (range - universalHashRange);
+                MurmurHash3_x64_64(sequence + pos, 31, seed1, out + i);
+                out[i] = out[i] & URANGEMASK;
+                out[i] += trees[idx1] & RANGEMASK;
             }
             index_to_pop = (index_to_pop + 1) % (32 - kMer);
         }
