@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
         filesystem::create_directory(config.experimentDir);
     }
 
-    ofstream results(config.experimentDir + "/results.txt", ofstream::trunc);
+    ofstream results(config.experimentDir + '/' + config.resultFile, ofstream::trunc);
     config.print(results);
 
     string filellistname = config.fastqFileName;
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
         chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
         ifstream filellist(filellistname);
         while (n < numFiles && getline(filellist, fileNames[n])) {
-            vector<string> sequences = getFastqData("/scratch1/gg29/CKBF/data/fastqFiles/" + fileNames[n]);
+            vector<string> sequences = getFastqData("/scratch/gg29/CKBF/data/fastqFiles/" + fileNames[n]);
             uint64_t numInserts = 0;
             for (size_t s = 0; s < sequences.size(); ++s) {
                 numInserts += sequences[s].size() - 30;
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
             t2 = chrono::high_resolution_clock::now();
             hashTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
 
-            results << queries[i];
+            // results << queries[i];
 
             for (size_t n = 0; n < numFiles; ++n){
                 bool positive = true;
@@ -166,12 +166,12 @@ int main(int argc, char** argv) {
                 fileStats[n].first += duration;
                 bfTimeAccu += duration;
                 if (positive) {
-                    results << ',' << n;
+                    // results << ',' << n;
                     fileStats[n].second += 1;
                     nPositives += 1;
                 }
             }
-            results << endl;
+            // results << endl;
         }
 
         for (uint32_t i = 0; i < numFiles; ++i) {
