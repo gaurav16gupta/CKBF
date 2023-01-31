@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
                 << "; # of inserts: " << counter << "; Hash Time: " << hashTime
                 << "; BF Insert Time: " << bfTime << endl;
 
-            ArBF_array[n]->release();
+            // ArBF_array[n]->release();
             n++;
             hashTimeAccu += hashTime;
             bfTimeAccu += bfTime;
@@ -130,13 +130,13 @@ int main(int argc, char** argv) {
         uint32_t hashTimeAccu = 0, bfTimeAccu = 0;
         chrono::time_point<chrono::high_resolution_clock> t1, t2;
 
-        ranges = read_vector(config.experimentDir + "/ranges.txt");
-        ifstream filellist(filellistname);
-        while (n < numFiles && getline(filellist, fileNames[n])) {
-            range = ranges[n];
-            ArBF_array[n] = new BloomFilter(range, config.k, config.disk, true, config.experimentDir + '/' + fileNames[n].substr(0,fileNames[n].length() - 6) + ".dat");
-            n++;
-        }
+        // ranges = read_vector(config.experimentDir + "/ranges.txt");
+        // ifstream filellist(filellistname);
+        // while (n < numFiles && getline(filellist, fileNames[n])) {
+        //     range = ranges[n];
+        //     ArBF_array[n] = new BloomFilter(range, config.k, config.disk, true, config.experimentDir + '/' + fileNames[n].substr(0,fileNames[n].length() - 6) + ".dat");
+        //     n++;
+        // }
         uint32_t nPositives = 0;
 
         // # pragma omp parallel for 
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
 
         for (uint32_t i = 0; i < numFiles; ++i) {
             results << "BF #" << i << ' ' << fileNames[i] << " Lookup Time: " << fileStats[i].first << "; # of positives: " << fileStats[i].second << endl;
-            ArBF_array[i]->release();
+            // ArBF_array[i]->release();
         }
 
         cout << "Query Hash Time: " << hashTimeAccu << "; BF Lookup Time: " << bfTimeAccu << "; # of positives: " << nPositives << '/' << nq * numFiles << endl;
