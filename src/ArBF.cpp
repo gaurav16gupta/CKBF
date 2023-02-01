@@ -130,13 +130,15 @@ int main(int argc, char** argv) {
         uint32_t hashTimeAccu = 0, bfTimeAccu = 0;
         chrono::time_point<chrono::high_resolution_clock> t1, t2;
 
-        // ranges = read_vector(config.experimentDir + "/ranges.txt");
-        // ifstream filellist(filellistname);
-        // while (n < numFiles && getline(filellist, fileNames[n])) {
-        //     range = ranges[n];
-        //     ArBF_array[n] = new BloomFilter(range, config.k, config.disk, true, config.experimentDir + '/' + fileNames[n].substr(0,fileNames[n].length() - 6) + ".dat");
-        //     n++;
-        // }
+        if (config.queryOnly) {
+            ranges = read_vector(config.experimentDir + "/ranges.txt");
+            ifstream filellist(filellistname);
+            while (n < numFiles && getline(filellist, fileNames[n])) {
+                range = ranges[n];
+                ArBF_array[n] = new BloomFilter(range, config.k, config.disk, true, config.experimentDir + '/' + fileNames[n].substr(0,fileNames[n].length() - 6) + ".dat");
+                n++;
+            }
+        }
         uint32_t nPositives = 0;
 
         // # pragma omp parallel for 
