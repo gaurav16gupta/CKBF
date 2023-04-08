@@ -212,7 +212,7 @@ public:
                     );
                 }
                 //MurmurHash3_x64_64(sequence + pos, 31, seed1, out + i, universalHashRange);
-                out[i] = (uhashvalue >> (i*10)) & URANGEMASK;
+                out[i] = (uhashvalue >> (i*Lbits)) & URANGEMASK;
                 out[i] += trees[idx1] & RANGEMASK;
             }
             index_to_pop = (index_to_pop + 1) % (32 - kMer);

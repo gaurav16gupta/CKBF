@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     const Config config = getConfigs(argv[1], argc - 2, argv + 2);
     config.print();
 
-    vector<string> sequences = getFastqData("./data/fastqFiles/" + config.fastqFileName + ".fastq");
+    vector<string> sequences = getFastqData("/scratch/gg29/CKBF/data/fastqFiles/" + config.fastqFileName + ".fastq");
     // vector<string> querySequences = getQueryData("../data/" + config.queryFileName);
     BloomFilter bf(config.range + config.universalHashRange, config.k, config.disk, config.fastqFileName+ " W");
     // omp_set_num_threads(config.numThreads);
@@ -73,6 +73,7 @@ int main(int argc, char** argv) {
         }
     }
     uint32_t hashTimeAccu = 0, bfTimeAccu = 0;
+    uint64_t numInsertions = 0;
     chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
     // # pragma omp parallel for 
     for (size_t i = 0; i < sequences.size(); ++i) {
@@ -88,10 +89,15 @@ int main(int argc, char** argv) {
             hashTimeAccu += chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
             bfTimeAccu += chrono::duration_cast<chrono::microseconds>(t3 - t2).count();
         }
+
+        numInsertions += sequences[i].size() - 30;
+        if (100 * (i-1) / sequences.size() != 100 * i / sequences.size()) {
+            cout << '#' << flush;
+        }
     }
-    cout << "Hash Time: " << hashTimeAccu << "; Insert Time: " << bfTimeAccu << endl;
+    cout << "\nTotal Hash Time: " << hashTimeAccu << "; Total BF Insert Time: " << bfTimeAccu << endl;
     cout << "BF Packing: " << bf.count() << '/' << bf.size << endl;
-    cout << "# of items inserted: " << sequences.size() << endl;
+    cout << "# of items inserted: " << numInsertions << endl;
 
     // hashTimeAccu = 0, bfTimeAccu = 0;
     uint32_t fpCount = 0;

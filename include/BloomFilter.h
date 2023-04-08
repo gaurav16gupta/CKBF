@@ -18,6 +18,7 @@ public:
     int file_;
     uint64_t size;
     uint32_t k;
+    bool disk;
 };
 
 #endif

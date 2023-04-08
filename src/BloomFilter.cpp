@@ -2,23 +2,42 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sstream>
+#include <random>
 
 using namespace std;
 
+string get_uuid() {
+  static random_device dev;
+  static mt19937 rng(dev());
+
+  uniform_int_distribution<int> dist(0, 15);
+
+  const char *v = "0123456789abcdef";
+  const bool dash[] = { 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0 };
+
+  string res;
+  for (int i = 0; i < 16; i++) {
+    if (dash[i]) res += "-";
+    res += v[dist(rng)];
+    res += v[dist(rng)];
+  }
+  return res;
+}
+
 BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name="bits W")
-  : size(sz), k(k_) {
+  : size(sz), k(k_), disk(disk) {
   if (disk) {
     string id, rw;
     stringstream s(name);
     s>>id>>rw;
     if (rw =="R"){
-      int file_ = open(("./results/"+id+".dat").c_str(), O_RDONLY, 0);
-      if (file_<=0) cerr<<"can't open file "<<"./results/"+id+".dat"<<" to load BF on disk"<<endl;
+      int file_ = open(("/scratch/tz21/CKBF/single_bf/"+id+".dat").c_str(), O_RDONLY, 0);
+      if (file_<=0) cerr<<"can't open file "<<"/scratch/tz21/CKBF/single_bf/"+id+".dat"<<" to load BF on disk"<<endl;
       bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_READ, MAP_SHARED, file_, 0));
     }
     else if (rw =="W"){
-      file_ = open(("./results/"+id+".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
-      if (file_<=0) cerr<<"can't open file "<<"./results/"+id+".dat"<<" to save BF on disk"<<endl;
+      file_ = open(("/scratch/tz21/CKBF/single_bf/" + id + get_uuid() + ".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
+      if (file_<=0) cerr<<"can't open file "<<"/scratch/tz21/CKBF/single_bf/"+id+".dat"<<" to save BF on disk"<<endl;
       posix_fallocate(file_, 0, sz >> 3); // sz >> 3 shd be multiple of 4096
       bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_WRITE, MAP_SHARED, file_, 0));
     }
@@ -27,7 +46,7 @@ BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name="bits 
     bits = new uint8_t[sz >> 3];
   }
   // initialize the bits to 0
-  for (uint32_t i=0 ; i <  (sz>>3) ; i ++) {
+  for (uint64_t i=0 ; i <  (sz>>3) ; i ++) {
     bits[i] = 0;
   }
 }
@@ -59,7 +78,9 @@ bool BloomFilter::test(uint64_t *hashes, uint64_t mod) {
 }
 
 void BloomFilter::release() {
-  munmap (bits, size >> 3);
+  if (disk) {
+    munmap (bits, size >> 3);
+  }
 }
 
 // make sure bits is all zeros
