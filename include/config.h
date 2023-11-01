@@ -24,6 +24,7 @@ struct Config {
       MAX_HASH_TYPE = 4
     };
 
+    string dataPath;
     string fastqFileName;
     string queryFileName;
     uint64_t range;
@@ -45,6 +46,7 @@ struct Config {
         << "; universalHashRange=" << universalHashRange << "; kMer=" << kMer << "; seed=" 
         << seed << "; hashType=" << hashtypeStr[hashType] << "; poison=" << poison 
         << "; disk=" << (disk ? "yes" : "no") << "; rangefactor=" << rangefactor
+        << "; data_path=" << dataPath
         << "; first_n_files=" << firstNFiles << "; query_only=" << (queryOnly ? "yes" : "no") << endl;
     }
 };
@@ -70,6 +72,8 @@ Config getConfigs(string configFileName, int numOverrides = 0, char ** overrideC
             config.fastqFileName = value;
         } else if (key == "query_file_name") {
             config.queryFileName = value;
+        } else if (key == "data_path") {
+            config.dataPath = value;
         } else if (key == "range") {
             config.range = stoul(value);
         } else if (key == "k") {

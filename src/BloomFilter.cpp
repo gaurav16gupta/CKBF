@@ -31,13 +31,13 @@ BloomFilter::BloomFilter(uint64_t sz, uint32_t k_, bool disk, string name="bits 
     stringstream s(name);
     s>>id>>rw;
     if (rw =="R"){
-      int file_ = open(("/scratch/tz21/CKBF/single_bf/"+id+".dat").c_str(), O_RDONLY, 0);
-      if (file_<=0) cerr<<"can't open file "<<"/scratch/tz21/CKBF/single_bf/"+id+".dat"<<" to load BF on disk"<<endl;
+      int file_ = open(("/tmp/"+id+".dat").c_str(), O_RDONLY, 0);
+      if (file_<=0) cerr<<"can't open file "<<"/tmp/"+id+".dat"<<" to load BF on disk"<<endl;
       bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_READ, MAP_SHARED, file_, 0));
     }
     else if (rw =="W"){
-      file_ = open(("/scratch/tz21/CKBF/single_bf/" + id + get_uuid() + ".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
-      if (file_<=0) cerr<<"can't open file "<<"/scratch/tz21/CKBF/single_bf/"+id+".dat"<<" to save BF on disk"<<endl;
+      file_ = open(("/tmp/" + id + get_uuid() + ".dat").c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP); //todo: make sure results folder is preesent
+      if (file_<=0) cerr<<"can't open file "<<"/tmp/"+id+".dat"<<" to save BF on disk"<<endl;
       posix_fallocate(file_, 0, sz >> 3); // sz >> 3 shd be multiple of 4096
       bits = reinterpret_cast<uint8_t*>(mmap(NULL, sz >> 3, PROT_WRITE, MAP_SHARED, file_, 0));
     }

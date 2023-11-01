@@ -1,19 +1,23 @@
+# IDentity with Locality: An ideal hash for efficient gene sequence search --- the official code repository
+
+Please follow the instructions below for reproducing the experiments. The code is tested on a machine running Ubuntu 20.04 with CMake 3.16.3 and GNU Make 4.2.1.
 
 1) Download the data files using SRA toolkit. For installing SRA toolkit use this guide https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump
-2) Download any sequence file in data/ folder: 
+2) Download the sequence files to `data/` folder: 
 ```
-mkdir data && cd data
-fastq-dump ERR337856  -O .
+cd data
+fastq-dump ERR337856 -O .
+cd ..
 ```
-run data/download.sh for IDL-COBS and IDL-RAMBO experiments. The corresponding gene sequence file names are also mentioned in data/fileList.txt.
-
 3) Build the program:
 ```
-mkdir debug
-bash build.sh
+mkdir build && cd build
+cmake .. && make -j
+cd ..
 ```
-4) Run the program:
+4) Run all experiments for vanilla Bloom filters vs IDL-Bloom filters, with the results written into `results` folder
 ```
 mkdir results
 bash run.sh
 ```
+5) To run all experiments for vanilla COBS vs IDL-COBS, switch to the `abf` branch by using `git checkout abf` and follow the instructions in README.md to run the experiments.
