@@ -1,41 +1,27 @@
-# declare variables
 
-CXX      := g++
-CXXFLAGS := -Wall -fopenmp -std=c++11 -O3
-INCLUDE  := -Iinclude/
-BUILD    := ./build
-TARGET   := program
+CXX=g++
+CFLAGS = -std=gnu++17 -Wall -fopenmp -O2 -w
+INC=-I include/
 
-SRC      :=                      \
-	 $(wildcard src/MurmurHash3.cpp)   \
-	 $(wildcard src/bitArray.cpp) \
-	 $(wildcard src/utils.cpp)   \
-	 $(wildcard src/MyBloom.cpp)   \
-	 $(wildcard src/main.cpp)   \
+index: clean_index
+	$(CXX) $(INC) $(CFLAGS) src/MurmurHash3.cpp src/Rambo_constructionIDL.cpp src/bitArray.cpp src/utils.cpp src/MyBloom.cpp src/IDLBloomFilter.cpp \
+							src/main.cpp \
+	-o index $(LFLAGS)
 
+query: clean_query
+	$(CXX) $(INC) $(CFLAGS) src/MurmurHash3.cpp src/Rambo_constructionIDL.cpp src/bitArray.cpp src/utils.cpp src/MyBloom.cpp src/IDLBloomFilter.cpp \
+							src/query.cpp \
+	-o query $(LFLAGS)
+	
+clean_index:
+	rm -f index
+clean_query:
+	rm -f query
 
-OBJECTS := $(SRC:%.cpp=$(BUILD)/%.o)
-
-all: clean build $(BUILD)/$(TARGET)
-
-$(BUILD)/$(TARGET): $(OBJECTS)
-	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(OBJECTS) -o $(BUILD)/$(TARGET)
-
-$(BUILD)/%.o: %.cpp
-	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(INCLUDE) -o $@ -c $<
-
-.PHONY: all build clean debug release
-
-build:
-	@mkdir -p $(BUILD)
+.PHONY: clean all
 
 debug: CXXFLAGS += -DDEBUG -g
 debug: all
 
 release: CXXFLAGS += -O2
 release: all
-
-clean:
-	-@rm -rvf $(BUILD)/*

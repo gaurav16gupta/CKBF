@@ -1,3 +1,4 @@
-data/fastqFiles/
-data/queries/
+data/
 results/
+index
+query
