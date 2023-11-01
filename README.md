@@ -1,25 +1,22 @@
-#01/16/2023
-```
-taskset -c 2 ./debug/program ./configs/fuzzy/fuzzy.268435456.4.12.1024.cfg
-taskset -c 2 ./debug/program ./configs/murmur/murmur.268435456.4.cfg
-```
-|              | Insert |       |  Query |       |
-|:------------:|:------:|:-----:|:------:|:-----:|
-|              | murmur | fuzzy | murmur | fuzzy |
-|     hash     |   45K  |  330K |   40K  |  338K |
-| insert/check |   70K  |  52K  |   16K  |  12K  |
-|      FPR     |    0   |  8e-6 |    0   |  8e-6 |
+# IDentity with Locality: An ideal hash for efficient gene sequence search --- the official code repository
 
-
-# CKBF
-cache efficient kmer Bloom Filter
+Please follow the instructions below for reproducing the COBS experiments. The code is tested on a machine running Ubuntu 20.04 with CMake 3.16.3 and GNU Make 4.2.1.
 
 1) Download the data files using SRA toolkit. For installing SRA toolkit use this guide https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump
-2) Download any sequence file in data/ folder: 
-fastq-dump SRR649944  -O .
-fastq-dump SRR649954  -O .
-3) Parameter: set Bloom filter size and k in main.cpp
-4) compile : make
-5) run: ./build/program 0
-
-
+2) Download the sequence files to `data/` folder: 
+```
+cd data
+./download.sh
+cd ..
+```
+3) Build the program:
+```
+mkdir build && cd build
+cmake .. && make -j
+cd ..
+```
+4) Run all experiments (on RAM and on disk) for vanilla COBS vs IDL-COBS, with the results written into `results` folder
+```
+mkdir results
+bash run_cobs.sh
+```

@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
         chrono::time_point<chrono::high_resolution_clock> t1, t2, t3;
         ifstream filellist(filellistname);
         while (n < numFiles && getline(filellist, fileNames[n])) {
-            vector<string> sequences = getFastqData("/scratch/gg29/CKBF/data/fastqFiles/" + fileNames[n]);
+            vector<string> sequences = getFastqData("data/" + fileNames[n]);
             uint64_t numInserts = 0;
             for (size_t s = 0; s < sequences.size(); ++s) {
                 numInserts += sequences[s].size() - 30;
